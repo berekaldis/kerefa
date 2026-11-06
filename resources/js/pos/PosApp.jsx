@@ -1,6 +1,47 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { buildIrp200dTicketHtml, printIrp200d } from './thermalPrinter';
 
+// Audio Synthesizer for Tactile POS Feedback
+function playPosSound(type = 'add') {
+    try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = new AudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'add') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+            osc.frequency.setValueAtTime(880, ctx.currentTime + 0.06);
+            gain.gain.setValueAtTime(0.06, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.14);
+        } else if (type === 'success') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08);
+            osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.16);
+            gain.gain.setValueAtTime(0.09, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.32);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.32);
+        } else if (type === 'void') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(260, ctx.currentTime);
+            gain.gain.setValueAtTime(0.06, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.12);
+        }
+    } catch {
+        // Audio muted or not permitted
+    }
+}
+
 export default function PosApp({ initialData }) {
     // Initial State Unpack
     const branch = initialData.branch || { id: 1, name: 'Main Branch' };
@@ -23,14 +64,31 @@ export default function PosApp({ initialData }) {
     const [recentOrders, setRecentOrders] = useState(initialOrders);
     const [ordersFilter, setOrdersFilter] = useState('all'); // 'all' | 'mine'
     const [numpadTableInput, setNumpadTableInput] = useState('');
+    const [selectedAreaId, setSelectedAreaId] = useState(diningAreas[0]?.id || null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [successOrder, setSuccessOrder] = useState(null);
+    const [showVoidModal, setShowVoidModal] = useState(false);
+    const [editingItemNotes, setEditingItemNotes] = useState(null); // { itemId, name, notes }
+    const [toasts, setToasts] = useState([]);
     const [currentTime, setCurrentTime] = useState(new Date());
 
     // Live Clock
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
+    }, []);
+
+    // Modern Floating Toast Dispatcher
+    const addToast = useCallback((title, message, type = 'success') => {
+        const id = Date.now() + Math.random();
+        setToasts(prev => [...prev, { id, title, message, type }]);
+        setTimeout(() => {
+            setToasts(prev => prev.filter(t => t.id !== id));
+        }, 2800);
+    }, []);
+
+    const removeToast = useCallback((id) => {
+        setToasts(prev => prev.filter(t => t.id !== id));
     }, []);
 
     // Flatten all tables across dining areas
@@ -41,7 +99,8 @@ export default function PosApp({ initialData }) {
                 area.tables.forEach(tbl => {
                     list.push({
                         ...tbl,
-                        area_name: area.name
+                        area_name: area.name,
+                        dining_area_id: area.id
                     });
                 });
             }
@@ -101,6 +160,7 @@ export default function PosApp({ initialData }) {
 
     // Cart Actions
     const addToCart = useCallback((item) => {
+        playPosSound('add');
         setCart(prev => {
             const existingIndex = prev.findIndex(ci => ci.id === item.id);
             if (existingIndex > -1) {
@@ -126,9 +186,11 @@ export default function PosApp({ initialData }) {
                 notes: ''
             }];
         });
-    }, []);
+        addToast('Item Added', `${item.name} added to order`, 'success');
+    }, [addToast]);
 
     const updateQuantity = useCallback((itemId, delta) => {
+        playPosSound('add');
         setCart(prev => {
             return prev.map(item => {
                 if (item.id === itemId) {
@@ -140,19 +202,22 @@ export default function PosApp({ initialData }) {
         });
     }, []);
 
-    const removeFromCart = useCallback((itemId) => {
+    const removeFromCart = useCallback((itemId, itemName) => {
+        playPosSound('void');
         setCart(prev => prev.filter(it => it.id !== itemId));
-    }, []);
+        addToast('Line Removed', `${itemName} removed`, 'info');
+    }, [addToast]);
 
-    const clearCart = useCallback(() => {
-        if (cart.length === 0) return;
-        if (window.confirm('Clear all items from current order?')) {
-            setCart([]);
-        }
-    }, [cart]);
+    const executeVoidCart = useCallback(() => {
+        playPosSound('void');
+        setCart([]);
+        setShowVoidModal(false);
+        addToast('Order Voided', 'Order docket has been cleared', 'danger');
+    }, [addToast]);
 
     // Touch Numpad Table Selector Actions
     const handleNumpadDigit = useCallback((digit) => {
+        playPosSound('add');
         setNumpadTableInput(prev => {
             if (prev.length >= 4) return prev;
             return prev + digit;
@@ -171,9 +236,9 @@ export default function PosApp({ initialData }) {
         const target = tableObj || numpadMatchedTable;
         if (!target) {
             if (!numpadTableInput) {
-                alert('Please enter or tap a table number.');
+                addToast('Table Required', 'Please enter or tap a table number.', 'warning');
             } else {
-                alert(`Table T-${numpadTableInput} was not found on this branch.`);
+                addToast('Not Found', `Table T-${numpadTableInput} was not found on this branch.`, 'warning');
             }
             return;
         }
@@ -185,18 +250,26 @@ export default function PosApp({ initialData }) {
         });
         setOrderType('dine_in');
         setNumpadTableInput('');
+        addToast('Table Assigned', `Order assigned to Table T-${target.table_number}`, 'info');
         setActiveTab('menu');
-    }, [numpadMatchedTable, numpadTableInput]);
+    }, [numpadMatchedTable, numpadTableInput, addToast]);
+
+    // Save Special Instructions for an item
+    const saveItemNotes = useCallback((itemId, notes) => {
+        setCart(prev => prev.map(it => it.id === itemId ? { ...it, notes } : it));
+        setEditingItemNotes(null);
+        addToast('Instructions Saved', 'Kitchen & bar prep notes updated', 'info');
+    }, [addToast]);
 
     // Submit Order & Print to IRP 200D
     const handleSubmitOrder = async () => {
         if (cart.length === 0) {
-            alert('Cannot place an empty order. Please add menu items.');
+            addToast('Empty Order', 'Please add menu items before dispatching.', 'warning');
             return;
         }
 
         if (orderType === 'dine_in' && !selectedTable) {
-            alert('Please select a dining table for Dine-In orders.');
+            addToast('Table Required', 'Please select a dining table for Dine-In orders.', 'warning');
             setActiveTab('table_numpad');
             return;
         }
@@ -233,12 +306,13 @@ export default function PosApp({ initialData }) {
             const data = await response.json();
 
             if (!response.ok || !data.success) {
-                alert(data.message || 'Error creating order.');
+                addToast('Submission Error', data.message || 'Error creating order.', 'danger');
                 setIsSubmitting(false);
                 return;
             }
 
             const newOrder = data.order;
+            playPosSound('success');
 
             // Trigger ESC/POS 80mm Print on IRP 200D for each station ticket
             if (newOrder.tickets && newOrder.tickets.length > 0) {
@@ -253,6 +327,7 @@ export default function PosApp({ initialData }) {
 
             // Show confirmation modal
             setSuccessOrder(newOrder);
+            addToast('Dispatched', `Order #${newOrder.order_number} sent to IRP 200D`, 'success');
 
             // Reset current cart
             setCart([]);
@@ -270,7 +345,7 @@ export default function PosApp({ initialData }) {
 
         } catch (err) {
             console.error('Order submission failed:', err);
-            alert('Server connection error. Please try again.');
+            addToast('Server Error', 'Failed to communicate with server.', 'danger');
         } finally {
             setIsSubmitting(false);
         }
@@ -284,12 +359,12 @@ export default function PosApp({ initialData }) {
                 handleSubmitOrder();
             } else if (e.key === 'F7') {
                 e.preventDefault();
-                clearCart();
+                if (cart.length > 0) setShowVoidModal(true);
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [handleSubmitOrder, clearCart]);
+    }, [handleSubmitOrder, cart.length]);
 
     // Filtered orders list
     const filteredOrders = useMemo(() => {
@@ -301,8 +376,8 @@ export default function PosApp({ initialData }) {
 
     return (
         <div className="d-flex flex-column vh-100 w-100 overflow-hidden bg-light">
-            {/* 1. BOOTSTRAP 5 TOP NAVBAR */}
-            <nav className="navbar navbar-expand-lg bg-white border-bottom shadow-xs px-3 py-2 shrink-0 z-3">
+            {/* 1. ULTRA-SMART TOP NAVBAR (Bootstrap 5) */}
+            <nav className="navbar navbar-expand bg-white border-bottom shadow-xs px-3 py-2 shrink-0 z-3">
                 <div className="container-fluid p-0 d-flex align-items-center justify-content-between">
                     {/* Brand & Location */}
                     <div className="d-flex align-items-center gap-2">
@@ -311,7 +386,7 @@ export default function PosApp({ initialData }) {
                         </div>
                         <div>
                             <div className="fw-bold fs-6 text-dark lh-1 mb-1">{appName}</div>
-                            <div className="d-flex align-items-center gap-1 small text-muted">
+                            <div className="d-flex align-items-center gap-1.5 small text-muted">
                                 <span className="badge bg-success rounded-circle p-1" style={{ width: '7px', height: '7px' }}></span>
                                 <span>{branch.name}</span>
                             </div>
@@ -322,10 +397,10 @@ export default function PosApp({ initialData }) {
                     <button
                         type="button"
                         onClick={() => setActiveTab('table_numpad')}
-                        className={`btn btn-sm rounded-pill fw-bold px-3 py-1.5 d-flex align-items-center gap-2 shadow-xs ${
+                        className={`btn btn-sm rounded-pill fw-bold px-3 py-1.5 d-flex align-items-center gap-2 shadow-xs transition-all ${
                             selectedTable 
                                 ? 'btn-primary text-white' 
-                                : 'btn-outline-warning text-dark border-warning'
+                                : 'btn-outline-warning text-dark border-warning bg-warning bg-opacity-10'
                         }`}
                     >
                         <i className="bi bi-hash fs-6"></i>
@@ -401,10 +476,10 @@ export default function PosApp({ initialData }) {
                 </div>
             </nav>
 
-            {/* 2. MAIN BOOTSTRAP GRID WORKSPACE */}
+            {/* 2. MAIN APPLICATION WORKSPACE */}
             <div className="container-fluid flex-grow-1 p-0 overflow-hidden position-relative">
                 <div className="row g-0 h-100">
-                    {/* 2A. LEFT COLUMN: ORDER DOCKET CARD (Bootstrap 5 Card) */}
+                    {/* 2A. LEFT DOCKET (Bootstrap 5 Card) */}
                     <div className={`
                         col-lg-4 col-xl-4 h-100 bg-white border-end shadow-sm z-2 flex-column
                         ${activeTab === 'cart' ? 'd-flex position-absolute top-0 start-0 w-100 h-100 z-3' : 'd-none d-lg-flex'}
@@ -430,7 +505,7 @@ export default function PosApp({ initialData }) {
                                 </div>
                             </div>
 
-                            {/* Order Type Switcher (Bootstrap Segmented Group) */}
+                            {/* Order Type Switcher */}
                             <div className="btn-group w-100" role="group">
                                 <button
                                     type="button"
@@ -444,6 +519,7 @@ export default function PosApp({ initialData }) {
                                     onClick={() => {
                                         setOrderType('takeaway');
                                         setSelectedTable(null);
+                                        addToast('Takeaway Mode', 'Table requirement cleared for takeaway', 'info');
                                     }}
                                     className={`btn btn-sm ${orderType === 'takeaway' ? 'btn-primary' : 'btn-outline-secondary'}`}
                                 >
@@ -454,6 +530,7 @@ export default function PosApp({ initialData }) {
                                     onClick={() => {
                                         setOrderType('delivery');
                                         setSelectedTable(null);
+                                        addToast('Delivery Mode', 'Table requirement cleared for delivery', 'info');
                                     }}
                                     className={`btn btn-sm ${orderType === 'delivery' ? 'btn-primary' : 'btn-outline-secondary'}`}
                                 >
@@ -482,7 +559,7 @@ export default function PosApp({ initialData }) {
                         {/* Cart Items List */}
                         <div className="flex-grow-1 overflow-auto p-2">
                             {cart.length === 0 ? (
-                                <div className="h-100 d-flex flex-col flex-column align-items-center justify-content-center text-center p-4 text-muted">
+                                <div className="h-100 d-flex flex-column align-items-center justify-content-center text-center p-4 text-muted">
                                     <i className="bi bi-cart3 fs-1 opacity-25 mb-2"></i>
                                     <div className="fw-bold text-secondary">Order docket is empty</div>
                                     <div className="small text-muted mb-3">Add food or drinks from the menu</div>
@@ -504,17 +581,29 @@ export default function PosApp({ initialData }) {
                                             <div className="d-flex align-items-start justify-content-between mb-1.5">
                                                 <div>
                                                     <div className="fw-bold text-dark lh-sm">{item.name}</div>
-                                                    <span className={`badge mt-1 ${
-                                                        item.stationType === 'bar' 
-                                                            ? 'bg-info-subtle text-info-emphasis border border-info-subtle' 
-                                                            : 'bg-danger-subtle text-danger border border-danger-subtle'
-                                                    }`} style={{ fontSize: '10px' }}>
-                                                        {item.stationName}
-                                                    </span>
+                                                    <div className="d-flex align-items-center gap-1.5 mt-1">
+                                                        <span className={`badge ${
+                                                            item.stationType === 'bar' 
+                                                                ? 'bg-info-subtle text-info-emphasis border border-info-subtle' 
+                                                                : 'bg-danger-subtle text-danger border border-danger-subtle'
+                                                        }`} style={{ fontSize: '10px' }}>
+                                                            {item.stationName}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setEditingItemNotes({ itemId: item.id, name: item.name, notes: item.notes || '' })}
+                                                            className={`btn btn-link p-0 text-decoration-none small ${item.notes ? 'text-warning fw-bold' : 'text-muted'}`}
+                                                            style={{ fontSize: '11px' }}
+                                                            title="Add Kitchen/Bar Cooking Notes"
+                                                        >
+                                                            <i className="bi bi-pencil-square me-0.5"></i>
+                                                            {item.notes ? item.notes : '+ Notes'}
+                                                        </button>
+                                                    </div>
                                                 </div>
                                                 <button
                                                     type="button"
-                                                    onClick={() => removeFromCart(item.id)}
+                                                    onClick={() => removeFromCart(item.id, item.name)}
                                                     className="btn btn-sm btn-link text-danger p-0 ms-2"
                                                     title="Remove"
                                                 >
@@ -574,7 +663,7 @@ export default function PosApp({ initialData }) {
                             <div className="d-grid gap-2" style={{ gridTemplateColumns: '90px 1fr' }}>
                                 <button
                                     type="button"
-                                    onClick={clearCart}
+                                    onClick={() => setShowVoidModal(true)}
                                     disabled={cart.length === 0}
                                     className="btn btn-outline-danger fw-bold d-flex flex-column align-items-center justify-content-center py-2"
                                     title="Void Order (F7)"
@@ -606,7 +695,7 @@ export default function PosApp({ initialData }) {
                         </div>
                     </div>
 
-                    {/* 2B. RIGHT COLUMN: WORKSPACE (Bootstrap Grid) */}
+                    {/* 2B. RIGHT COLUMN: WORKSPACE */}
                     <div className="col-lg-8 col-xl-8 h-100 d-flex flex-column bg-light overflow-hidden">
                         {/* VIEW 1: MENU VIEW */}
                         {activeTab === 'menu' && (
@@ -747,102 +836,154 @@ export default function PosApp({ initialData }) {
 
                         {/* VIEW 2: NUMERIC PAD TABLE SELECTOR ("use numberk padd table") */}
                         {activeTab === 'table_numpad' && (
-                            <div className="h-100 overflow-auto p-3 p-sm-4 d-flex flex-column align-items-center justify-content-center">
-                                <div className="card shadow-sm border-0 rounded-4 p-4 mx-auto w-100" style={{ maxWidth: '420px' }}>
-                                    <div className="text-center mb-3">
-                                        <div className="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning-emphasis rounded-circle p-3 mb-2" style={{ width: '50px', height: '50px' }}>
-                                            <i className="bi bi-123 fs-4"></i>
-                                        </div>
-                                        <h5 className="fw-bold mb-0 text-dark">Touch Numeric Pad Table</h5>
-                                        <div className="small text-muted">Type table number directly on keypad</div>
-                                    </div>
-
-                                    {/* Display Box */}
-                                    <div className="bg-light border rounded-4 p-3 text-center mb-3">
-                                        <div className="small text-muted fw-bold text-uppercase">Selected Table</div>
-                                        <div className="fs-1 fw-black font-mono text-dark my-1">
-                                            {numpadTableInput ? `T-${numpadTableInput}` : (selectedTable ? `T-${selectedTable.table_number}` : 'T-___')}
-                                        </div>
-                                        <div>
-                                            {numpadMatchedTable ? (
-                                                <span className={`badge ${
-                                                    numpadMatchedTable.status === 'available'
-                                                        ? 'bg-success-subtle text-success border border-success-subtle'
-                                                        : 'bg-danger-subtle text-danger border border-danger-subtle'
-                                                }`}>
-                                                    {numpadMatchedTable.status === 'available' ? 'Available' : 'Occupied'} • {numpadMatchedTable.area_name}
-                                                </span>
-                                            ) : (
-                                                <span className="small text-muted">Type digits (e.g. 1, 4, 12)</span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Touch 3x4 Numpad */}
-                                    <div className="row g-2 mb-3">
-                                        {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(digit => (
-                                            <div key={digit} className="col-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleNumpadDigit(digit)}
-                                                    className="btn btn-light border py-3 fs-3 fw-bold font-mono rounded-3 w-100 shadow-2xs hover-lift"
-                                                >
-                                                    {digit}
-                                                </button>
+                            <div className="h-100 overflow-auto p-3 p-sm-4">
+                                <div className="row g-3 justify-content-center">
+                                    {/* Left: The Touch 3x4 Numpad */}
+                                    <div className="col-12 col-md-6 col-xl-5">
+                                        <div className="card shadow-sm border-0 rounded-4 p-4">
+                                            <div className="text-center mb-3">
+                                                <div className="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning-emphasis rounded-circle p-3 mb-2" style={{ width: '48px', height: '48px' }}>
+                                                    <i className="bi bi-123 fs-4"></i>
+                                                </div>
+                                                <h5 className="fw-bold mb-0 text-dark">Touch Numeric Pad Table</h5>
+                                                <div className="small text-muted">Type table number directly on keypad</div>
                                             </div>
-                                        ))}
-                                        <div className="col-4">
+
+                                            {/* Display Box */}
+                                            <div className="bg-light border rounded-4 p-3 text-center mb-3">
+                                                <div className="small text-muted fw-bold text-uppercase">Selected Table</div>
+                                                <div className="fs-1 fw-black font-mono text-dark my-1">
+                                                    {numpadTableInput ? `T-${numpadTableInput}` : (selectedTable ? `T-${selectedTable.table_number}` : 'T-___')}
+                                                </div>
+                                                <div>
+                                                    {numpadMatchedTable ? (
+                                                        <span className={`badge ${
+                                                            numpadMatchedTable.status === 'available'
+                                                                ? 'bg-success-subtle text-success border border-success-subtle'
+                                                                : 'bg-danger-subtle text-danger border border-danger-subtle'
+                                                        }`}>
+                                                            {numpadMatchedTable.status === 'available' ? 'Available' : 'Occupied'} • {numpadMatchedTable.area_name}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="small text-muted">Type digits (e.g. 1, 4, 12)</span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Touch 3x4 Numpad */}
+                                            <div className="row g-2 mb-3">
+                                                {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(digit => (
+                                                    <div key={digit} className="col-4">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleNumpadDigit(digit)}
+                                                            className="btn btn-light border py-3 fs-3 fw-bold font-mono rounded-3 w-100 shadow-2xs hover-lift"
+                                                        >
+                                                            {digit}
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                                <div className="col-4">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleNumpadClear}
+                                                        className="btn btn-outline-danger py-3 fs-5 fw-bold rounded-3 w-100"
+                                                    >
+                                                        AC
+                                                    </button>
+                                                </div>
+                                                <div className="col-4">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleNumpadDigit('0')}
+                                                        className="btn btn-light border py-3 fs-3 fw-bold font-mono rounded-3 w-100 shadow-2xs hover-lift"
+                                                    >
+                                                        0
+                                                    </button>
+                                                </div>
+                                                <div className="col-4">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleNumpadBackspace}
+                                                        className="btn btn-outline-warning text-dark py-3 fs-5 fw-bold rounded-3 w-100"
+                                                    >
+                                                        <i className="bi bi-backspace"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Confirm Button */}
                                             <button
                                                 type="button"
-                                                onClick={handleNumpadClear}
-                                                className="btn btn-outline-danger py-3 fs-5 fw-bold rounded-3 w-100"
+                                                onClick={() => applyNumpadTable()}
+                                                className="btn btn-primary btn-lg w-100 rounded-3 py-3 fw-bold shadow-sm"
                                             >
-                                                AC
-                                            </button>
-                                        </div>
-                                        <div className="col-4">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleNumpadDigit('0')}
-                                                className="btn btn-light border py-3 fs-3 fw-bold font-mono rounded-3 w-100 shadow-2xs hover-lift"
-                                            >
-                                                0
-                                            </button>
-                                        </div>
-                                        <div className="col-4">
-                                            <button
-                                                type="button"
-                                                onClick={handleNumpadBackspace}
-                                                className="btn btn-outline-warning text-dark py-3 fs-5 fw-bold rounded-3 w-100"
-                                            >
-                                                <i className="bi bi-backspace"></i>
+                                                Apply Table & Go To Menu <i className="bi bi-arrow-right ms-1"></i>
                                             </button>
                                         </div>
                                     </div>
 
-                                    {/* Confirm Button */}
-                                    <button
-                                        type="button"
-                                        onClick={() => applyNumpadTable()}
-                                        className="btn btn-primary btn-lg w-100 rounded-3 py-3 fw-bold shadow-sm"
-                                    >
-                                        Apply Table & Go To Menu <i className="bi bi-arrow-right ms-1"></i>
-                                    </button>
+                                    {/* Right: Visual Floor Tables Grid */}
+                                    <div className="col-12 col-md-6 col-xl-7">
+                                        <div className="card shadow-sm border-0 rounded-4 p-4 h-100">
+                                            <div className="d-flex align-items-center justify-content-between mb-3">
+                                                <h6 className="fw-bold mb-0 text-dark">
+                                                    <i className="bi bi-geo-alt-fill text-warning me-1"></i> Floor Seating Plan
+                                                </h6>
+                                                <div className="d-flex gap-1">
+                                                    {diningAreas.map(area => (
+                                                        <button
+                                                            key={area.id}
+                                                            type="button"
+                                                            onClick={() => setSelectedAreaId(area.id)}
+                                                            className={`btn btn-sm rounded-pill fw-bold ${selectedAreaId === area.id ? 'btn-dark' : 'btn-light border'}`}
+                                                        >
+                                                            {area.name}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
 
-                                    {/* Quick Available Tables List */}
-                                    <div className="mt-4 pt-3 border-top">
-                                        <div className="small fw-bold text-muted text-uppercase mb-2">Or Tap a Free Table:</div>
-                                        <div className="d-flex flex-wrap gap-1.5" style={{ maxHeight: '120px', overflowY: 'auto' }}>
-                                            {allTablesList.filter(t => t.status === 'available').map(tbl => (
-                                                <button
-                                                    key={tbl.id}
-                                                    type="button"
-                                                    onClick={() => applyNumpadTable(tbl)}
-                                                    className="btn btn-sm btn-outline-success font-mono fw-bold rounded-pill"
-                                                >
-                                                    T-{tbl.table_number}
-                                                </button>
-                                            ))}
+                                            <div className="row row-cols-2 row-cols-sm-3 g-2 overflow-auto" style={{ maxHeight: '450px' }}>
+                                                {allTablesList
+                                                    .filter(t => !selectedAreaId || t.dining_area_id === selectedAreaId)
+                                                    .map(tbl => {
+                                                        const isAvailable = tbl.status === 'available';
+                                                        const isSelected = selectedTable && selectedTable.id === tbl.id;
+                                                        const isMatched = numpadTableInput && String(tbl.table_number) === String(numpadTableInput);
+
+                                                        return (
+                                                            <div key={tbl.id} className="col">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => applyNumpadTable(tbl)}
+                                                                    className={`card w-100 text-start p-3 rounded-4 border-2 transition-all hover-lift ${
+                                                                        isSelected || isMatched
+                                                                            ? 'border-primary bg-primary bg-opacity-10 shadow-sm'
+                                                                            : isAvailable
+                                                                                ? 'border-success bg-white'
+                                                                                : 'border-danger bg-danger bg-opacity-10'
+                                                                    }`}
+                                                                >
+                                                                    <div className="d-flex justify-content-between align-items-center mb-1">
+                                                                        <span className="font-mono fw-black fs-5 text-dark">T-{tbl.table_number}</span>
+                                                                        <span className={`badge ${isAvailable ? 'bg-success' : 'bg-danger'}`} style={{ fontSize: '10px' }}>
+                                                                            {isAvailable ? 'Free' : 'Busy'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="small text-muted">
+                                                                        {tbl.capacity} Seats
+                                                                        {tbl.active_order && (
+                                                                            <div className="font-mono text-warning fw-bold small mt-1">
+                                                                                #{tbl.active_order.order_number}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -920,8 +1061,9 @@ export default function PosApp({ initialData }) {
                                                                                 const html = buildIrp200dTicketHtml(order, ticket, appName);
                                                                                 printIrp200d(html);
                                                                             });
+                                                                            addToast('Reprinted', `Order #${order.order_number} tickets sent to IRP 200D`, 'info');
                                                                         } else {
-                                                                            alert('No station tickets for this order.');
+                                                                            addToast('No Tickets', 'No station tickets for this order.', 'warning');
                                                                         }
                                                                     }}
                                                                     className="btn btn-sm btn-outline-primary font-mono py-1 px-2"
@@ -942,9 +1084,150 @@ export default function PosApp({ initialData }) {
                 </div>
             </div>
 
-            {/* 3. ORDER DISPATCH SUCCESS MODAL (Bootstrap 5 Modal) */}
+            {/* 3. FLOATING TOASTS NOTIFICATIONS CONTAINER (Bootstrap 5 Toast Alerts) */}
+            <div className="position-fixed top-0 end-0 p-3 z-3" style={{ maxWidth: '360px', pointerEvents: 'none' }}>
+                <div className="d-flex flex-column gap-2" style={{ pointerEvents: 'auto' }}>
+                    {toasts.map(t => (
+                        <div
+                            key={t.id}
+                            className={`toast show border-0 shadow-lg rounded-4 overflow-hidden text-white ${
+                                t.type === 'success' ? 'bg-success' :
+                                t.type === 'danger' ? 'bg-danger' :
+                                t.type === 'warning' ? 'bg-warning text-dark' : 'bg-primary'
+                            }`}
+                            role="alert"
+                        >
+                            <div className="d-flex align-items-center justify-content-between p-3">
+                                <div className="d-flex align-items-center gap-2">
+                                    <i className={`fs-5 bi ${
+                                        t.type === 'success' ? 'bi-check-circle-fill' :
+                                        t.type === 'danger' ? 'bi-x-circle-fill' :
+                                        t.type === 'warning' ? 'bi-exclamation-triangle-fill' : 'bi-info-circle-fill'
+                                    }`}></i>
+                                    <div>
+                                        <div className="fw-bold lh-1">{t.title}</div>
+                                        <div className="small opacity-90 mt-0.5">{t.message}</div>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => removeToast(t.id)}
+                                    className="btn-close btn-close-white ms-2"
+                                ></button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* 4. IN-APP MODAL: VOID ORDER CONFIRMATION */}
+            {showVoidModal && (
+                <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)' }}>
+                    <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: '400px' }}>
+                        <div className="modal-content border-0 shadow-lg rounded-4 p-4 text-center">
+                            <div className="bg-danger-subtle text-danger rounded-circle mx-auto p-3 mb-2 d-flex align-items-center justify-content-center" style={{ width: '56px', height: '56px' }}>
+                                <i className="bi bi-trash3-fill fs-3"></i>
+                            </div>
+
+                            <h5 className="fw-bold text-dark mb-1">Void Current Order?</h5>
+                            <p className="text-muted small mb-4">
+                                Are you sure you want to clear all {cartTotals.itemCount} item(s) from the current docket? This action cannot be undone.
+                            </p>
+
+                            <div className="d-grid gap-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowVoidModal(false)}
+                                    className="btn btn-light border py-2.5 fw-bold rounded-3"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={executeVoidCart}
+                                    className="btn btn-danger py-2.5 fw-bold rounded-3"
+                                >
+                                    Yes, Void Order
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 5. IN-APP MODAL: KITCHEN / BAR PREP INSTRUCTIONS */}
+            {editingItemNotes && (
+                <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)' }}>
+                    <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: '440px' }}>
+                        <div className="modal-content border-0 shadow-lg rounded-4 p-4">
+                            <div className="d-flex align-items-center justify-content-between mb-3">
+                                <div>
+                                    <h6 className="fw-bold mb-0 text-dark">Kitchen & Bar Notes</h6>
+                                    <div className="small text-muted">{editingItemNotes.name}</div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditingItemNotes(null)}
+                                    className="btn-close"
+                                ></button>
+                            </div>
+
+                            {/* Preset Quick Badges */}
+                            <div className="mb-3">
+                                <div className="small text-muted fw-bold mb-1.5">Quick Tags:</div>
+                                <div className="d-flex flex-wrap gap-1.5">
+                                    {['No Spicy', 'Extra Spicy', 'No Onions', 'Less Salt', 'Well Done', 'No Sugar', 'Ice on Side'].map(tag => (
+                                        <button
+                                            key={tag}
+                                            type="button"
+                                            onClick={() => setEditingItemNotes(prev => ({
+                                                ...prev,
+                                                notes: prev.notes ? `${prev.notes}, ${tag}` : tag
+                                            }))}
+                                            className="btn btn-sm btn-light border rounded-pill small"
+                                        >
+                                            +{tag}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Custom Note Input */}
+                            <div className="mb-3">
+                                <label className="form-label small fw-bold text-muted">Special Preparation Instructions:</label>
+                                <textarea
+                                    rows="2"
+                                    value={editingItemNotes.notes}
+                                    onChange={(e) => setEditingItemNotes(prev => ({ ...prev, notes: e.target.value }))}
+                                    placeholder="e.g. Well done, no spicy, sauce on the side..."
+                                    className="form-control rounded-3"
+                                ></textarea>
+                            </div>
+
+                            <div className="d-grid gap-2" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditingItemNotes(null)}
+                                    className="btn btn-light border py-2 fw-bold rounded-3"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => saveItemNotes(editingItemNotes.itemId, editingItemNotes.notes)}
+                                    className="btn btn-primary py-2 fw-bold rounded-3"
+                                >
+                                    Save Notes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 6. ORDER DISPATCH SUCCESS MODAL */}
             {successOrder && (
-                <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(15, 23, 42, 0.5)' }}>
+                <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(15, 23, 42, 0.6)' }}>
                     <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: '400px' }}>
                         <div className="modal-content border-0 shadow-lg rounded-4 p-4 text-center">
                             <div className="bg-success-subtle text-success rounded-circle mx-auto p-3 mb-2 d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px' }}>
