@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Pos\CreateOrderRequest;
 use App\Models\DiningArea;
 use App\Models\MenuCategory;
+use App\Models\Order;
+use App\Models\User;
 use App\Services\BranchContextService;
 use App\Services\OrderRoutingService;
 use Illuminate\Http\JsonResponse;
@@ -35,8 +37,8 @@ class PosController extends Controller
             })
                 ->where('is_active', true)
                 ->where('is_available', true)
-                ->with('modifiers');
-        }])
+                ->with(['modifiers', 'orderStation']);
+        }, 'orderStation'])
             ->where(function ($q) use ($branchId) {
                 $q->where('branch_id', $branchId)->orWhereNull('branch_id');
             })
@@ -46,17 +48,34 @@ class PosController extends Controller
 
         // Fetch dining areas with tables
         $diningAreas = DiningArea::with(['tables' => function ($q) {
-            $q->where('is_active', true)->with('activeOrder');
+            $q->where('is_active', true)->with('activeOrder.waiter');
         }])
             ->where('branch_id', $branchId)
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get();
 
+        // Fetch recent orders
+        $recentOrders = Order::with(['table.diningArea', 'waiter', 'items.menuItem', 'tickets.station'])
+            ->where('branch_id', $branchId)
+            ->latest('id')
+            ->take(50)
+            ->get();
+
+        // Fetch active staff/waiters
+        $waiters = User::where('is_active', true)
+            ->where(function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            })
+            ->orderBy('name')
+            ->get();
+
         return view('pos.terminal', [
             'branch' => $branch,
             'categories' => $categories,
             'diningAreas' => $diningAreas,
+            'recentOrders' => $recentOrders,
+            'waiters' => $waiters,
         ]);
     }
 
