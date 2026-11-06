@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en" class="h-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -11,18 +11,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <!-- Bootstrap 5 CSS & Icons -->
+    <!-- Bootstrap 5.3.3 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons 1.11.3 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
     <style>
         :root {
-            --pos-bg: #f8fafc;
-            --pos-surface: #ffffff;
-            --pos-border: #e2e8f0;
-            --pos-primary: #0284c7;
-            --pos-primary-hover: #0369a1;
-            --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --bs-body-font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --bs-body-bg: #f8fafc;
             --font-mono: 'JetBrains Mono', monospace;
         }
 
@@ -37,9 +34,9 @@
             height: 100%;
             margin: 0;
             padding: 0;
-            background-color: var(--pos-bg);
+            background-color: #f8fafc;
             color: #1e293b;
-            font-family: var(--font-main);
+            font-family: var(--bs-body-font-family);
             overflow: hidden;
             -webkit-font-smoothing: antialiased;
         }
@@ -48,10 +45,25 @@
             font-family: var(--font-mono) !important;
         }
 
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        .hover-lift {
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.06) !important;
+        }
+        .hover-lift:active {
+            transform: scale(0.98);
+        }
+
         /* Custom refined scrollbars */
         ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
         }
         ::-webkit-scrollbar-track {
             background: #f1f5f9;
@@ -89,7 +101,7 @@
     @vite(['resources/css/app.css', 'resources/js/pos.jsx'])
     @stack('styles')
 </head>
-<body class="h-full bg-slate-50 text-slate-800">
+<body class="h-100 bg-light">
 
     @yield('content')
 

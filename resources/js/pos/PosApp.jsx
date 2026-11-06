@@ -1,10 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { 
-    Utensils, LayoutGrid, Coffee, Beer, Wine, Flame, Clock, 
-    Printer, Trash2, Plus, Minus, Search, CheckCircle2, 
-    LogOut, AlertCircle, RefreshCw, X, ChevronRight, ShoppingBag, 
-    Store, Bike, UserCheck, Star, Hash, ArrowRight, Delete, ChevronLeft
-} from 'lucide-react';
 import { buildIrp200dTicketHtml, printIrp200d } from './thermalPrinter';
 
 export default function PosApp({ initialData }) {
@@ -20,7 +14,7 @@ export default function PosApp({ initialData }) {
     const appName = initialData.appName || 'Kerefa Restaurant';
 
     // State
-    const [activeTab, setActiveTab] = useState('menu'); // 'menu' | 'table_numpad' | 'cart' | 'orders' | 'bestsellers'
+    const [activeTab, setActiveTab] = useState('menu'); // 'menu' | 'table_numpad' | 'cart' | 'orders'
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [orderType, setOrderType] = useState('dine_in'); // 'dine_in' | 'takeaway' | 'delivery'
@@ -272,7 +266,6 @@ export default function PosApp({ initialData }) {
                 setSelectedTable(null);
             }
 
-            // Switch to Menu or Orders
             setActiveTab('menu');
 
         } catch (err) {
@@ -307,660 +300,686 @@ export default function PosApp({ initialData }) {
     }, [recentOrders, ordersFilter, user.id]);
 
     return (
-        <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-50 text-slate-800 font-sans antialiased">
-            {/* 1. TOP RESPONSIVE HEADER */}
-            <header className="h-14 sm:h-16 bg-white border-b border-slate-200/80 px-3 sm:px-4 flex items-center justify-between shadow-xs shrink-0 z-30">
-                {/* Brand & Table Indicator */}
-                <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-linear-to-tr from-amber-600 to-amber-500 text-white flex items-center justify-center shadow-xs shrink-0">
-                        <Utensils className="w-4 h-4 sm:w-5 sm:h-5" />
-                    </div>
-                    <div>
-                        <div className="font-extrabold text-sm sm:text-base tracking-tight text-slate-900 leading-tight">
-                            {appName}
+        <div className="d-flex flex-column vh-100 w-100 overflow-hidden bg-light">
+            {/* 1. BOOTSTRAP 5 TOP NAVBAR */}
+            <nav className="navbar navbar-expand-lg bg-white border-bottom shadow-xs px-3 py-2 shrink-0 z-3">
+                <div className="container-fluid p-0 d-flex align-items-center justify-content-between">
+                    {/* Brand & Location */}
+                    <div className="d-flex align-items-center gap-2">
+                        <div className="bg-warning bg-gradient text-white rounded-3 p-2 d-flex align-items-center justify-content-center shadow-xs" style={{ width: '38px', height: '38px' }}>
+                            <i className="bi bi-cup-hot-fill fs-5"></i>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-500 font-medium">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            <span className="truncate max-w-[120px] sm:max-w-none">{branch.name}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Table Numpad Trigger (Prominent Quick Pill) */}
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('table_numpad')}
-                    className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl border text-xs font-extrabold transition-all shadow-2xs ${
-                        selectedTable 
-                            ? 'bg-sky-50 border-sky-300 text-sky-700 ring-2 ring-sky-500/20' 
-                            : 'bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100'
-                    }`}
-                >
-                    <Hash className="w-4 h-4" />
-                    <span>{selectedTable ? `T-${selectedTable.table_number}` : 'Select Table'}</span>
-                    <ChevronRight className="w-3 h-3 text-slate-400" />
-                </button>
-
-                {/* Navigation Tabs Bar */}
-                <nav className="flex items-center gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80">
-                    <button 
-                        type="button"
-                        onClick={() => setActiveTab('menu')}
-                        className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                            activeTab === 'menu' 
-                                ? 'bg-white text-sky-700 shadow-xs' 
-                                : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                        <LayoutGrid className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Menu</span>
-                    </button>
-
-                    <button 
-                        type="button"
-                        onClick={() => setActiveTab('table_numpad')}
-                        className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                            activeTab === 'table_numpad' 
-                                ? 'bg-white text-sky-700 shadow-xs' 
-                                : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                        <Hash className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Table Pad</span>
-                    </button>
-
-                    <button 
-                        type="button"
-                        onClick={() => setActiveTab('orders')}
-                        className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                            activeTab === 'orders' 
-                                ? 'bg-white text-sky-700 shadow-xs' 
-                                : 'text-slate-600 hover:text-slate-900'
-                        }`}
-                    >
-                        <Clock className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Orders</span>
-                    </button>
-
-                    <a 
-                        href={routes.dashboard || '/dashboard'}
-                        className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 transition-all"
-                        title="Exit POS to ERP Dashboard"
-                    >
-                        <LogOut className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Exit</span>
-                    </a>
-                </nav>
-            </header>
-
-            {/* 2. MAIN ADAPTIVE WORKSPACE */}
-            <div className="flex flex-1 overflow-hidden relative">
-                {/* 2A. LEFT DOCKET (Visible side-by-side on lg: screens; switchable or drawer on mobile/tablet) */}
-                <aside className={`
-                    lg:flex flex-col h-full bg-white border-r border-slate-200/80 shadow-sm z-20 shrink-0
-                    ${activeTab === 'cart' ? 'flex absolute inset-0 z-40 w-full' : 'hidden lg:w-[360px] xl:w-[390px]'}
-                `}>
-                    {/* Cart Header on Mobile/Tablet */}
-                    <div className="p-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            {activeTab === 'cart' && (
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('menu')}
-                                    className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 lg:hidden"
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                </button>
-                            )}
-                            <div className="font-extrabold text-sm text-slate-800">
-                                Current Order
+                        <div>
+                            <div className="fw-bold fs-6 text-dark lh-1 mb-1">{appName}</div>
+                            <div className="d-flex align-items-center gap-1 small text-muted">
+                                <span className="badge bg-success rounded-circle p-1" style={{ width: '7px', height: '7px' }}></span>
+                                <span>{branch.name}</span>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Order Type Chips */}
-                        <div className="flex items-center gap-1 bg-slate-200/70 p-0.5 rounded-lg text-[11px] font-bold">
-                            <button
-                                type="button"
-                                onClick={() => setOrderType('dine_in')}
-                                className={`px-2 py-1 rounded-md transition-all ${
-                                    orderType === 'dine_in' ? 'bg-white text-sky-700 shadow-2xs' : 'text-slate-600'
-                                }`}
-                            >
-                                Dine-In
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setOrderType('takeaway');
-                                    setSelectedTable(null);
-                                }}
-                                className={`px-2 py-1 rounded-md transition-all ${
-                                    orderType === 'takeaway' ? 'bg-white text-sky-700 shadow-2xs' : 'text-slate-600'
-                                }`}
-                            >
-                                Takeaway
-                            </button>
+                    {/* Table Quick Pill / Trigger */}
+                    <button
+                        type="button"
+                        onClick={() => setActiveTab('table_numpad')}
+                        className={`btn btn-sm rounded-pill fw-bold px-3 py-1.5 d-flex align-items-center gap-2 shadow-xs ${
+                            selectedTable 
+                                ? 'btn-primary text-white' 
+                                : 'btn-outline-warning text-dark border-warning'
+                        }`}
+                    >
+                        <i className="bi bi-hash fs-6"></i>
+                        <span>{selectedTable ? `Table: T-${selectedTable.table_number}` : 'Select Table'}</span>
+                        <i className="bi bi-chevron-right small opacity-75"></i>
+                    </button>
+
+                    {/* System Badges (Desktop / Tablet) */}
+                    <div className="d-none d-lg-flex align-items-center gap-2">
+                        {/* Staff */}
+                        <div className="badge bg-light text-dark border rounded-pill px-3 py-2 fw-semibold d-flex align-items-center gap-1.5">
+                            <i className="bi bi-person-fill text-primary"></i>
+                            <span>{user.name}</span>
+                            <span className="badge bg-secondary-subtle text-secondary rounded-pill text-uppercase ms-1" style={{ fontSize: '10px' }}>
+                                {roleName}
+                            </span>
+                        </div>
+
+                        {/* Printer Status */}
+                        <div className="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 font-mono d-flex align-items-center gap-1.5">
+                            <i className="bi bi-printer-fill"></i>
+                            <span>IRP 200D Ready (80mm)</span>
+                        </div>
+
+                        {/* Live Digital Clock */}
+                        <div className="badge bg-light text-dark border rounded-pill px-3 py-2 font-mono d-flex align-items-center gap-1.5">
+                            <i className="bi bi-clock-fill text-muted"></i>
+                            <span className="fw-bold">
+                                {currentTime.toLocaleTimeString('en-US', { hour12: false })}
+                            </span>
                         </div>
                     </div>
 
-                    {/* Table Assignment Bar in Cart */}
-                    <div className="px-3 py-2 bg-slate-100/50 border-b border-slate-200/60 flex items-center justify-between text-xs">
+                    {/* Nav Pills Switcher */}
+                    <div className="d-flex align-items-center gap-1 bg-light p-1 rounded-pill border">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('menu')}
+                            className={`btn btn-sm rounded-pill fw-bold px-3 py-1 ${activeTab === 'menu' ? 'btn-white bg-white text-primary shadow-xs' : 'text-secondary'}`}
+                        >
+                            <i className="bi bi-grid-fill me-1"></i>
+                            <span className="d-none d-sm-inline">Menu</span>
+                        </button>
+
                         <button
                             type="button"
                             onClick={() => setActiveTab('table_numpad')}
-                            className="flex items-center gap-1.5 font-bold text-sky-700 hover:underline"
+                            className={`btn btn-sm rounded-pill fw-bold px-3 py-1 ${activeTab === 'table_numpad' ? 'btn-white bg-white text-primary shadow-xs' : 'text-secondary'}`}
                         >
-                            <Hash className="w-3.5 h-3.5 text-amber-500" />
-                            <span>{selectedTable ? `Table: T-${selectedTable.table_number}` : 'Tap to Assign Table'}</span>
+                            <i className="bi bi-123 me-1"></i>
+                            <span className="d-none d-sm-inline">Table Pad</span>
                         </button>
-                        <span className="font-mono text-slate-400 font-bold">
-                            {cartTotals.itemCount} items
-                        </span>
-                    </div>
-
-                    {/* Items List */}
-                    <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                        {cart.length === 0 ? (
-                            <div className="h-full flex flex-col items-center justify-center text-slate-400 p-6 text-center">
-                                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-300 mb-2">
-                                    <ShoppingBag className="w-6 h-6" />
-                                </div>
-                                <div className="font-bold text-slate-600 text-sm">Order is empty</div>
-                                <div className="text-xs text-slate-400 mt-0.5">
-                                    Tap dishes from the menu to add
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setActiveTab('menu')}
-                                    className="mt-3 px-4 py-1.5 rounded-lg bg-sky-600 text-white font-bold text-xs lg:hidden"
-                                >
-                                    Browse Menu
-                                </button>
-                            </div>
-                        ) : (
-                            cart.map(item => (
-                                <div 
-                                    key={item.id}
-                                    className="p-2.5 rounded-xl border border-slate-200/90 bg-white shadow-2xs flex items-center justify-between gap-2"
-                                >
-                                    <div className="flex-1 min-w-0">
-                                        <div className="font-bold text-sm text-slate-800 truncate">
-                                            {item.name}
-                                        </div>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                            <span className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-md ${
-                                                item.stationType === 'bar' 
-                                                    ? 'bg-sky-50 text-sky-700 border border-sky-200' 
-                                                    : 'bg-rose-50 text-rose-700 border border-rose-200'
-                                            }`}>
-                                                {item.stationName}
-                                            </span>
-                                            <span className="font-mono text-xs text-slate-500 font-medium">
-                                                ETB {item.price.toFixed(2)}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Qty Steppers */}
-                                    <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg shrink-0">
-                                        <button 
-                                            type="button"
-                                            onClick={() => updateQuantity(item.id, -1)}
-                                            className="w-6 h-6 rounded bg-white text-slate-700 hover:bg-slate-200 flex items-center justify-center text-xs font-bold shadow-2xs"
-                                        >
-                                            <Minus className="w-3 h-3" />
-                                        </button>
-                                        <span className="font-mono text-xs font-black min-w-[16px] text-center">
-                                            {item.quantity}
-                                        </span>
-                                        <button 
-                                            type="button"
-                                            onClick={() => updateQuantity(item.id, 1)}
-                                            className="w-6 h-6 rounded bg-white text-slate-700 hover:bg-slate-200 flex items-center justify-center text-xs font-bold shadow-2xs"
-                                        >
-                                            <Plus className="w-3 h-3" />
-                                        </button>
-                                    </div>
-
-                                    {/* Total */}
-                                    <div className="text-right font-mono text-xs font-extrabold text-slate-800 min-w-[50px]">
-                                        {(item.price * item.quantity).toFixed(2)}
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-
-                    {/* Cart Footer */}
-                    <div className="p-3 sm:p-4 bg-white border-t border-slate-200/80 space-y-2.5 shrink-0 shadow-xs">
-                        <div className="flex items-baseline justify-between">
-                            <span className="text-xs font-extrabold uppercase text-slate-400">Total</span>
-                            <div className="font-mono font-black text-xl sm:text-2xl text-slate-900">
-                                <span className="text-xs font-bold text-slate-400 mr-1">ETB</span>
-                                {cartTotals.grandTotal.toFixed(2)}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-[80px_1fr] gap-2">
-                            <button
-                                type="button"
-                                onClick={clearCart}
-                                disabled={cart.length === 0}
-                                className="flex flex-col items-center justify-center py-2.5 rounded-xl border border-rose-200 text-rose-600 bg-rose-50 hover:bg-rose-100 font-extrabold text-xs transition-all disabled:opacity-40"
-                                title="Void Order (F7)"
-                            >
-                                <Trash2 className="w-3.5 h-3.5 mb-0.5" />
-                                <span>Void (F7)</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={handleSubmitOrder}
-                                disabled={cart.length === 0 || isSubmitting}
-                                className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow-md shadow-emerald-600/20 transition-all disabled:opacity-40 active:scale-[0.98]"
-                                title="Send Order to Kitchen & Bar IRP 200D Printers (F6)"
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <RefreshCw className="w-4 h-4 animate-spin" />
-                                        <span>Printing...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Printer className="w-4 h-4" />
-                                        <span>SEND ORDER (F6)</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </aside>
-
-                {/* 2B. RIGHT MAIN AREA (Dynamic: Menu, Numeric Table Pad, Orders) */}
-                <main className="flex-1 flex flex-col overflow-hidden bg-slate-100/60">
-                    {/* VIEW 1: MENU (Responsive 2-col on phones, 3-4 col on tablets, 4-6 col on desktop) */}
-                    {activeTab === 'menu' && (
-                        <div className="flex-1 flex flex-col h-full overflow-hidden">
-                            {/* Search & Category Filter Bar */}
-                            <div className="p-3 bg-white border-b border-slate-200/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
-                                {/* Horizontal Categories Chips */}
-                                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedCategory('all')}
-                                        className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
-                                            selectedCategory === 'all'
-                                                ? 'bg-slate-900 text-white shadow-xs'
-                                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                        }`}
-                                    >
-                                        All Dishes ({allMenuItems.length})
-                                    </button>
-                                    {categories.map(cat => (
-                                        <button
-                                            key={cat.id}
-                                            type="button"
-                                            onClick={() => setSelectedCategory(cat.id)}
-                                            className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all shrink-0 ${
-                                                selectedCategory === cat.id
-                                                    ? 'bg-sky-600 text-white shadow-xs'
-                                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                            }`}
-                                        >
-                                            {cat.name} ({cat.menu_items ? cat.menu_items.length : 0})
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {/* Search Bar */}
-                                <div className="relative w-full sm:w-56 shrink-0">
-                                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <input 
-                                        type="text" 
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="Search dishes..." 
-                                        className="w-full pl-8 pr-7 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-sky-500 transition-all"
-                                    />
-                                    {searchQuery && (
-                                        <button 
-                                            onClick={() => setSearchQuery('')}
-                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                        >
-                                            <X className="w-3.5 h-3.5" />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Products Grid (Mobile 2-col, Tablet 3-4 col, Desktop 4-5 col) */}
-                            <div className="flex-1 overflow-y-auto p-3 sm:p-4 pb-20 lg:pb-4">
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3.5">
-                                    {displayedItems.map(item => {
-                                        const stationType = item.order_station ? item.order_station.station_type : (item.preparation_department || 'kitchen');
-                                        const stationName = item.order_station ? item.order_station.name : (stationType === 'bar' ? 'Bar' : 'Kitchen');
-
-                                        return (
-                                            <div 
-                                                key={item.id}
-                                                onClick={() => addToCart(item)}
-                                                className="group p-3 rounded-2xl bg-white border border-slate-200/90 hover:border-sky-300 hover:shadow-md transition-all cursor-pointer flex flex-col justify-between min-h-[115px] sm:min-h-[125px] active:scale-[0.97]"
-                                            >
-                                                <div>
-                                                    <div className="font-extrabold text-xs sm:text-sm text-slate-800 leading-snug group-hover:text-sky-700 transition-colors line-clamp-2">
-                                                        {item.name}
-                                                    </div>
-                                                    <div className="flex items-center gap-1 mt-1">
-                                                        <span className={`text-[9px] sm:text-[10px] font-extrabold px-1.5 py-0.2 rounded-md ${
-                                                            stationType === 'bar' 
-                                                                ? 'bg-sky-50 text-sky-700 border border-sky-200/80' 
-                                                                : 'bg-rose-50 text-rose-700 border border-rose-200/80'
-                                                        }`}>
-                                                            {stationName}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="flex items-baseline justify-between mt-2 pt-2 border-t border-slate-100">
-                                                    <div className="font-mono font-black text-xs sm:text-sm text-emerald-700">
-                                                        <span className="text-[9px] font-bold text-slate-400 mr-0.5">ETB</span>
-                                                        {parseFloat(item.price).toFixed(2)}
-                                                    </div>
-                                                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-slate-100 group-hover:bg-sky-600 group-hover:text-white text-slate-500 flex items-center justify-center transition-colors">
-                                                        <Plus className="w-3 h-3" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            {/* FLOATING MOBILE CART BAR (Visible on mobile/tablet when items in cart) */}
-                            {cart.length > 0 && (
-                                <div className="lg:hidden fixed bottom-3 left-3 right-3 z-30 animate-in fade-in slide-in-from-bottom-2">
-                                    <div 
-                                        onClick={() => setActiveTab('cart')}
-                                        className="bg-slate-900 text-white rounded-2xl p-3 shadow-xl flex items-center justify-between cursor-pointer border border-slate-700 active:scale-[0.99]"
-                                    >
-                                        <div className="flex items-center gap-2.5">
-                                            <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center font-bold text-sm font-mono">
-                                                {cartTotals.itemCount}
-                                            </div>
-                                            <div>
-                                                <div className="font-extrabold text-sm leading-tight">View Current Order</div>
-                                                <div className="text-[11px] text-slate-400">
-                                                    {selectedTable ? `Table T-${selectedTable.table_number}` : 'No table assigned'}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-3">
-                                            <div className="font-mono font-black text-base text-emerald-400">
-                                                ETB {cartTotals.grandTotal.toFixed(2)}
-                                            </div>
-                                            <div className="bg-white/10 px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1">
-                                                <span>Cart</span>
-                                                <ChevronRight className="w-3.5 h-3.5" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {/* VIEW 2: NUMERIC PAD TABLE SELECTOR ("use numberk padd table") */}
-                    {activeTab === 'table_numpad' && (
-                        <div className="flex-1 overflow-y-auto p-3 sm:p-6 flex flex-col items-center justify-center">
-                            <div className="max-w-md w-full bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-sm">
-                                {/* Title & Instructions */}
-                                <div className="text-center mb-3">
-                                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 mb-2">
-                                        <Hash className="w-5 h-5" />
-                                    </div>
-                                    <h2 className="font-black text-lg text-slate-800">
-                                        Touch Numeric Pad Table
-                                    </h2>
-                                    <p className="text-xs text-slate-400">
-                                        Enter table number directly on the keypad
-                                    </p>
-                                </div>
-
-                                {/* Table Display Screen */}
-                                <div className="bg-slate-50 border-2 border-slate-200/80 rounded-2xl p-4 text-center mb-4 transition-all">
-                                    <div className="text-[11px] font-extrabold uppercase text-slate-400 tracking-wider">
-                                        Selected Table
-                                    </div>
-                                    <div className="font-mono font-black text-4xl sm:text-5xl text-slate-900 tracking-tight my-1">
-                                        {numpadTableInput ? `T-${numpadTableInput}` : (selectedTable ? `T-${selectedTable.table_number}` : 'T-___')}
-                                    </div>
-
-                                    {/* Table Status Hint */}
-                                    <div className="text-xs font-semibold">
-                                        {numpadMatchedTable ? (
-                                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full ${
-                                                numpadMatchedTable.status === 'available'
-                                                    ? 'bg-emerald-100 text-emerald-800'
-                                                    : 'bg-rose-100 text-rose-800'
-                                            }`}>
-                                                <span className={`w-1.5 h-1.5 rounded-full ${numpadMatchedTable.status === 'available' ? 'bg-emerald-600' : 'bg-rose-600'}`}></span>
-                                                <span>{numpadMatchedTable.status === 'available' ? 'Available' : 'Occupied'} • {numpadMatchedTable.area_name}</span>
-                                            </span>
-                                        ) : (
-                                            <span className="text-slate-400">Type table number (e.g. 1, 4, 12)</span>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Touch Numpad Grid */}
-                                <div className="grid grid-cols-3 gap-2.5 mb-4">
-                                    {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(digit => (
-                                        <button
-                                            key={digit}
-                                            type="button"
-                                            onClick={() => handleNumpadDigit(digit)}
-                                            className="h-14 sm:h-16 rounded-2xl bg-slate-100/90 hover:bg-slate-200 active:bg-sky-600 active:text-white font-mono font-black text-2xl text-slate-800 flex items-center justify-center transition-all shadow-2xs"
-                                        >
-                                            {digit}
-                                        </button>
-                                    ))}
-
-                                    <button
-                                        type="button"
-                                        onClick={handleNumpadClear}
-                                        className="h-14 sm:h-16 rounded-2xl bg-rose-50 text-rose-600 hover:bg-rose-100 active:bg-rose-600 active:text-white font-extrabold text-base flex items-center justify-center transition-all"
-                                    >
-                                        AC
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => handleNumpadDigit('0')}
-                                        className="h-14 sm:h-16 rounded-2xl bg-slate-100/90 hover:bg-slate-200 active:bg-sky-600 active:text-white font-mono font-black text-2xl text-slate-800 flex items-center justify-center transition-all shadow-2xs"
-                                    >
-                                        0
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={handleNumpadBackspace}
-                                        className="h-14 sm:h-16 rounded-2xl bg-amber-50 text-amber-700 hover:bg-amber-100 active:bg-amber-600 active:text-white font-extrabold text-base flex items-center justify-center transition-all"
-                                    >
-                                        <Delete className="w-5 h-5" />
-                                    </button>
-                                </div>
-
-                                {/* Confirm & Go To Menu Button */}
-                                <button
-                                    type="button"
-                                    onClick={() => applyNumpadTable()}
-                                    className="w-full py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-sm sm:text-base shadow-md shadow-sky-600/25 flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                                >
-                                    <span>Apply Table & Take Order</span>
-                                    <ArrowRight className="w-4 h-4" />
-                                </button>
-
-                                {/* Quick Available Tables Tap Chips */}
-                                <div className="mt-5 pt-4 border-t border-slate-100">
-                                    <div className="text-[11px] font-extrabold uppercase text-slate-400 mb-2">
-                                        Or Tap an Available Table:
-                                    </div>
-                                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-                                        {allTablesList.filter(t => t.status === 'available').map(tbl => (
-                                            <button
-                                                key={tbl.id}
-                                                type="button"
-                                                onClick={() => applyNumpadTable(tbl)}
-                                                className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-mono font-extrabold text-xs hover:bg-emerald-100 transition-all"
-                                            >
-                                                T-{tbl.table_number}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* VIEW 3: ORDERS LEDGER & IRP 200D REPRINT */}
-                    {activeTab === 'orders' && (
-                        <div className="flex-1 flex flex-col overflow-hidden p-3 sm:p-4">
-                            <div className="bg-white rounded-2xl border border-slate-200/80 flex-1 overflow-hidden flex flex-col shadow-2xs">
-                                <div className="p-3 border-b border-slate-200/80 flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-1.5">
-                                        <button
-                                            type="button"
-                                            onClick={() => setOrdersFilter('all')}
-                                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                                                ordersFilter === 'all' 
-                                                    ? 'bg-slate-900 text-white' 
-                                                    : 'text-slate-600 hover:bg-slate-100'
-                                            }`}
-                                        >
-                                            All ({recentOrders.length})
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setOrdersFilter('mine')}
-                                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                                                ordersFilter === 'mine' 
-                                                    ? 'bg-slate-900 text-white' 
-                                                    : 'text-slate-600 hover:bg-slate-100'
-                                            }`}
-                                        >
-                                            Mine ({recentOrders.filter(o => o.waiter_id === user.id).length})
-                                        </button>
-                                    </div>
-
-                                    <div className="text-xs text-slate-500 font-medium">
-                                        Printer: <strong>IRP 200D</strong>
-                                    </div>
-                                </div>
-
-                                <div className="flex-1 overflow-y-auto">
-                                    <table className="w-full text-left text-xs border-collapse">
-                                        <thead className="bg-slate-50 text-slate-500 font-extrabold uppercase tracking-wider sticky top-0 border-b border-slate-200">
-                                            <tr>
-                                                <th className="py-2.5 px-3 sm:px-4">Order #</th>
-                                                <th className="py-2.5 px-3 sm:px-4">Table</th>
-                                                <th className="py-2.5 px-3 sm:px-4">Total</th>
-                                                <th className="py-2.5 px-3 sm:px-4 hidden sm:table-cell">Time</th>
-                                                <th className="py-2.5 px-3 sm:px-4 text-right">Reprint</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 text-slate-700">
-                                            {filteredOrders.length === 0 ? (
-                                                <tr>
-                                                    <td colSpan="5" className="py-10 text-center text-slate-400">
-                                                        No orders placed yet.
-                                                    </td>
-                                                </tr>
-                                            ) : (
-                                                filteredOrders.map(order => (
-                                                    <tr key={order.id} className="hover:bg-slate-50/80 transition-colors">
-                                                        <td className="py-3 px-3 sm:px-4 font-mono font-bold text-sky-700">
-                                                            {order.order_number}
-                                                        </td>
-                                                        <td className="py-3 px-3 sm:px-4 font-bold">
-                                                            {order.table ? `T-${order.table.table_number}` : 'Takeaway'}
-                                                        </td>
-                                                        <td className="py-3 px-3 sm:px-4 font-mono font-extrabold text-slate-900">
-                                                            ETB {parseFloat(order.total_amount).toFixed(2)}
-                                                        </td>
-                                                        <td className="py-3 px-3 sm:px-4 text-slate-400 font-mono hidden sm:table-cell">
-                                                            {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </td>
-                                                        <td className="py-3 px-3 sm:px-4 text-right">
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    if (order.tickets && order.tickets.length > 0) {
-                                                                        order.tickets.forEach(ticket => {
-                                                                            const html = buildIrp200dTicketHtml(order, ticket, appName);
-                                                                            printIrp200d(html);
-                                                                        });
-                                                                    } else {
-                                                                        alert('No station tickets for this order.');
-                                                                    }
-                                                                }}
-                                                                className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] inline-flex items-center gap-1 transition-all"
-                                                            >
-                                                                <Printer className="w-3 h-3 text-slate-500" />
-                                                                <span>IRP 200D</span>
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                ))
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </main>
-            </div>
-
-            {/* 3. ORDER DISPATCH SUCCESS MODAL */}
-            {successOrder && (
-                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
-                    <div className="bg-white rounded-3xl max-w-sm sm:max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-100 text-center">
-                        <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-2.5">
-                            <CheckCircle2 className="w-7 h-7" />
-                        </div>
-
-                        <h3 className="font-black text-lg sm:text-xl text-slate-800">
-                            Order Dispatched
-                        </h3>
-
-                        <div className="font-mono font-black text-2xl text-sky-700 mt-1 mb-2">
-                            {successOrder.order_number}
-                        </div>
-
-                        <div className="text-xs text-slate-500 mb-4">
-                            {successOrder.table ? `Table: T-${successOrder.table.table_number}` : 'Takeaway'} • Total: ETB {parseFloat(successOrder.total_amount).toFixed(2)}
-                        </div>
-
-                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-left text-xs font-mono text-slate-600 mb-4 space-y-1">
-                            <div className="font-bold text-slate-800 flex items-center gap-1.5 mb-1">
-                                <Printer className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>IRP 200D Tickets Printed:</span>
-                            </div>
-                            {successOrder.tickets && successOrder.tickets.map(ticket => (
-                                <div key={ticket.id} className="text-emerald-700 font-semibold">
-                                    ✔ {ticket.ticket_type === 'bar' ? 'Central Bar' : 'Main Kitchen'} Ticket #{ticket.ticket_number}
-                                </div>
-                            ))}
-                        </div>
 
                         <button
                             type="button"
-                            onClick={() => setSuccessOrder(null)}
-                            className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm rounded-xl shadow-xs transition-all"
+                            onClick={() => setActiveTab('orders')}
+                            className={`btn btn-sm rounded-pill fw-bold px-3 py-1 ${activeTab === 'orders' ? 'btn-white bg-white text-primary shadow-xs' : 'text-secondary'}`}
                         >
-                            Next Order
+                            <i className="bi bi-receipt me-1"></i>
+                            <span className="d-none d-sm-inline">Orders</span>
+                            <span className="badge bg-secondary-subtle text-secondary rounded-pill ms-1 font-mono">{recentOrders.length}</span>
                         </button>
+
+                        <a
+                            href={routes.dashboard || '/dashboard'}
+                            className="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1 fw-bold"
+                            title="Exit POS to ERP Dashboard"
+                        >
+                            <i className="bi bi-box-arrow-right"></i>
+                            <span className="d-none d-sm-inline ms-1">Exit</span>
+                        </a>
+                    </div>
+                </div>
+            </nav>
+
+            {/* 2. MAIN BOOTSTRAP GRID WORKSPACE */}
+            <div className="container-fluid flex-grow-1 p-0 overflow-hidden position-relative">
+                <div className="row g-0 h-100">
+                    {/* 2A. LEFT COLUMN: ORDER DOCKET CARD (Bootstrap 5 Card) */}
+                    <div className={`
+                        col-lg-4 col-xl-4 h-100 bg-white border-end shadow-sm z-2 flex-column
+                        ${activeTab === 'cart' ? 'd-flex position-absolute top-0 start-0 w-100 h-100 z-3' : 'd-none d-lg-flex'}
+                    `}>
+                        {/* Docket Header */}
+                        <div className="p-3 border-bottom bg-light bg-opacity-50">
+                            <div className="d-flex align-items-center justify-content-between mb-2">
+                                <div className="d-flex align-items-center gap-2">
+                                    {activeTab === 'cart' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveTab('menu')}
+                                            className="btn btn-sm btn-light border d-lg-none"
+                                        >
+                                            <i className="bi bi-chevron-left"></i>
+                                        </button>
+                                    )}
+                                    <h6 className="fw-bold mb-0 text-dark">Current Order</h6>
+                                </div>
+
+                                <div className="badge bg-light text-muted border font-mono">
+                                    {cartTotals.itemCount} items
+                                </div>
+                            </div>
+
+                            {/* Order Type Switcher (Bootstrap Segmented Group) */}
+                            <div className="btn-group w-100" role="group">
+                                <button
+                                    type="button"
+                                    onClick={() => setOrderType('dine_in')}
+                                    className={`btn btn-sm ${orderType === 'dine_in' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                >
+                                    <i className="bi bi-shop me-1"></i> Dine-In
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setOrderType('takeaway');
+                                        setSelectedTable(null);
+                                    }}
+                                    className={`btn btn-sm ${orderType === 'takeaway' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                >
+                                    <i className="bi bi-bag-fill me-1"></i> Takeaway
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setOrderType('delivery');
+                                        setSelectedTable(null);
+                                    }}
+                                    className={`btn btn-sm ${orderType === 'delivery' ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                >
+                                    <i className="bi bi-bicycle me-1"></i> Delivery
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Table Selector Strip */}
+                        <div className="px-3 py-2 bg-light border-bottom d-flex align-items-center justify-content-between">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('table_numpad')}
+                                className="btn btn-link p-0 text-decoration-none fw-bold small text-primary d-flex align-items-center gap-1.5"
+                            >
+                                <i className="bi bi-hash text-warning"></i>
+                                <span>{selectedTable ? `Table: T-${selectedTable.table_number}` : 'Tap to Assign Table'}</span>
+                            </button>
+                            {selectedTable && (
+                                <span className="badge bg-success-subtle text-success border border-success-subtle">
+                                    Active Table
+                                </span>
+                            )}
+                        </div>
+
+                        {/* Cart Items List */}
+                        <div className="flex-grow-1 overflow-auto p-2">
+                            {cart.length === 0 ? (
+                                <div className="h-100 d-flex flex-col flex-column align-items-center justify-content-center text-center p-4 text-muted">
+                                    <i className="bi bi-cart3 fs-1 opacity-25 mb-2"></i>
+                                    <div className="fw-bold text-secondary">Order docket is empty</div>
+                                    <div className="small text-muted mb-3">Add food or drinks from the menu</div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab('menu')}
+                                        className="btn btn-sm btn-primary rounded-pill d-lg-none"
+                                    >
+                                        Open Menu
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="list-group list-group-flush gap-2">
+                                    {cart.map(item => (
+                                        <div
+                                            key={item.id}
+                                            className="list-group-item border rounded-3 p-2.5 bg-white shadow-xs"
+                                        >
+                                            <div className="d-flex align-items-start justify-content-between mb-1.5">
+                                                <div>
+                                                    <div className="fw-bold text-dark lh-sm">{item.name}</div>
+                                                    <span className={`badge mt-1 ${
+                                                        item.stationType === 'bar' 
+                                                            ? 'bg-info-subtle text-info-emphasis border border-info-subtle' 
+                                                            : 'bg-danger-subtle text-danger border border-danger-subtle'
+                                                    }`} style={{ fontSize: '10px' }}>
+                                                        {item.stationName}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeFromCart(item.id)}
+                                                    className="btn btn-sm btn-link text-danger p-0 ms-2"
+                                                    title="Remove"
+                                                >
+                                                    <i className="bi bi-x-circle-fill"></i>
+                                                </button>
+                                            </div>
+
+                                            <div className="d-flex align-items-center justify-content-between pt-1 border-top">
+                                                <div className="small text-muted font-mono">
+                                                    ETB {item.price.toFixed(2)}
+                                                </div>
+
+                                                <div className="d-flex align-items-center gap-2">
+                                                    {/* Steppers */}
+                                                    <div className="btn-group btn-group-sm">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => updateQuantity(item.id, -1)}
+                                                            className="btn btn-light border py-0 px-2 fw-bold"
+                                                        >
+                                                            -
+                                                        </button>
+                                                        <span className="btn btn-light border py-0 px-2.5 fw-bold font-mono">
+                                                            {item.quantity}
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => updateQuantity(item.id, 1)}
+                                                            className="btn btn-light border py-0 px-2 fw-bold"
+                                                        >
+                                                            +
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Line Total */}
+                                                    <div className="font-mono fw-bold text-dark" style={{ minWidth: '60px', textAlign: 'right' }}>
+                                                        {(item.price * item.quantity).toFixed(2)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Cart Footer */}
+                        <div className="p-3 bg-white border-top shadow-xs">
+                            <div className="d-flex align-items-baseline justify-content-between mb-3">
+                                <span className="text-muted fw-bold small text-uppercase">Total Amount</span>
+                                <div className="fs-3 fw-bold font-mono text-dark">
+                                    <span className="fs-6 text-muted me-1">ETB</span>
+                                    {cartTotals.grandTotal.toFixed(2)}
+                                </div>
+                            </div>
+
+                            <div className="d-grid gap-2" style={{ gridTemplateColumns: '90px 1fr' }}>
+                                <button
+                                    type="button"
+                                    onClick={clearCart}
+                                    disabled={cart.length === 0}
+                                    className="btn btn-outline-danger fw-bold d-flex flex-column align-items-center justify-content-center py-2"
+                                    title="Void Order (F7)"
+                                >
+                                    <i className="bi bi-trash3-fill mb-0.5"></i>
+                                    <span style={{ fontSize: '11px' }}>Void (F7)</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={handleSubmitOrder}
+                                    disabled={cart.length === 0 || isSubmitting}
+                                    className="btn btn-success btn-lg fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm text-uppercase"
+                                    title="Send Order to Kitchen & Bar IRP 200D Printers (F6)"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm"></span>
+                                            <span>Printing...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <i className="bi bi-printer-fill fs-5"></i>
+                                            <span>Send Order (F6)</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 2B. RIGHT COLUMN: WORKSPACE (Bootstrap Grid) */}
+                    <div className="col-lg-8 col-xl-8 h-100 d-flex flex-column bg-light overflow-hidden">
+                        {/* VIEW 1: MENU VIEW */}
+                        {activeTab === 'menu' && (
+                            <div className="h-100 d-flex flex-column overflow-hidden">
+                                {/* Search & Category Pills */}
+                                <div className="p-3 bg-white border-bottom shadow-2xs">
+                                    <div className="row g-2 align-items-center">
+                                        <div className="col-12 col-md-5">
+                                            <div className="input-group input-group-sm">
+                                                <span className="input-group-text bg-white border-end-0">
+                                                    <i className="bi bi-search text-muted"></i>
+                                                </span>
+                                                <input
+                                                    type="text"
+                                                    value={searchQuery}
+                                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                                    placeholder="Search dishes or code..."
+                                                    className="form-control border-start-0"
+                                                />
+                                                {searchQuery && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSearchQuery('')}
+                                                        className="btn btn-outline-secondary"
+                                                    >
+                                                        <i className="bi bi-x-lg"></i>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="col-12 col-md-7">
+                                            <div className="d-flex align-items-center gap-1.5 overflow-auto pb-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedCategory('all')}
+                                                    className={`btn btn-sm rounded-pill fw-bold text-nowrap ${
+                                                        selectedCategory === 'all' 
+                                                            ? 'btn-dark' 
+                                                            : 'btn-outline-secondary bg-white'
+                                                    }`}
+                                                >
+                                                    All ({allMenuItems.length})
+                                                </button>
+                                                {categories.map(cat => (
+                                                    <button
+                                                        key={cat.id}
+                                                        type="button"
+                                                        onClick={() => setSelectedCategory(cat.id)}
+                                                        className={`btn btn-sm rounded-pill fw-bold text-nowrap ${
+                                                            selectedCategory === cat.id 
+                                                                ? 'btn-primary' 
+                                                                : 'btn-outline-secondary bg-white'
+                                                        }`}
+                                                    >
+                                                        {cat.name} ({cat.menu_items ? cat.menu_items.length : 0})
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Menu Items Grid */}
+                                <div className="flex-grow-1 overflow-auto p-3 pb-5">
+                                    <div className="row row-cols-2 row-cols-sm-3 row-cols-md-3 row-cols-xl-4 g-2 g-sm-3">
+                                        {displayedItems.map(item => {
+                                            const stationType = item.order_station ? item.order_station.station_type : (item.preparation_department || 'kitchen');
+                                            const stationName = item.order_station ? item.order_station.name : (stationType === 'bar' ? 'Bar' : 'Kitchen');
+
+                                            return (
+                                                <div key={item.id} className="col">
+                                                    <div
+                                                        onClick={() => addToCart(item)}
+                                                        className="card h-100 border-0 shadow-sm rounded-4 p-3 hover-lift cursor-pointer d-flex flex-column justify-content-between"
+                                                    >
+                                                        <div>
+                                                            <div className="fw-bold text-dark lh-sm mb-1">{item.name}</div>
+                                                            <span className={`badge ${
+                                                                stationType === 'bar' 
+                                                                    ? 'bg-info-subtle text-info-emphasis border border-info-subtle' 
+                                                                    : 'bg-danger-subtle text-danger border border-danger-subtle'
+                                                            }`} style={{ fontSize: '10px' }}>
+                                                                {stationName}
+                                                            </span>
+                                                        </div>
+
+                                                        <div className="d-flex align-items-baseline justify-content-between pt-2 mt-2 border-top">
+                                                            <div className="font-mono fw-bold text-success fs-6">
+                                                                <span className="small text-muted me-0.5">ETB</span>
+                                                                {parseFloat(item.price).toFixed(2)}
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                className="btn btn-sm btn-primary rounded-circle p-1 d-flex align-items-center justify-content-center"
+                                                                style={{ width: '28px', height: '28px' }}
+                                                            >
+                                                                <i className="bi bi-plus-lg"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Floating Cart Bar on Mobile / Small Tablet */}
+                                {cart.length > 0 && (
+                                    <div className="position-fixed bottom-0 start-0 end-0 p-3 z-3 d-lg-none">
+                                        <div
+                                            onClick={() => setActiveTab('cart')}
+                                            className="card shadow-lg bg-dark text-white border-0 rounded-4 p-3 d-flex flex-row align-items-center justify-content-between cursor-pointer"
+                                        >
+                                            <div className="d-flex align-items-center gap-2">
+                                                <div className="badge bg-primary rounded-circle p-2 fs-6 font-mono">
+                                                    {cartTotals.itemCount}
+                                                </div>
+                                                <div>
+                                                    <div className="fw-bold">View Current Order</div>
+                                                    <div className="small text-white-50">
+                                                        {selectedTable ? `Table T-${selectedTable.table_number}` : 'No table assigned'}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="d-flex align-items-center gap-2">
+                                                <div className="font-mono fw-bold fs-5 text-warning">
+                                                    ETB {cartTotals.grandTotal.toFixed(2)}
+                                                </div>
+                                                <i className="bi bi-chevron-right fs-5"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* VIEW 2: NUMERIC PAD TABLE SELECTOR ("use numberk padd table") */}
+                        {activeTab === 'table_numpad' && (
+                            <div className="h-100 overflow-auto p-3 p-sm-4 d-flex flex-column align-items-center justify-content-center">
+                                <div className="card shadow-sm border-0 rounded-4 p-4 mx-auto w-100" style={{ maxWidth: '420px' }}>
+                                    <div className="text-center mb-3">
+                                        <div className="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning-emphasis rounded-circle p-3 mb-2" style={{ width: '50px', height: '50px' }}>
+                                            <i className="bi bi-123 fs-4"></i>
+                                        </div>
+                                        <h5 className="fw-bold mb-0 text-dark">Touch Numeric Pad Table</h5>
+                                        <div className="small text-muted">Type table number directly on keypad</div>
+                                    </div>
+
+                                    {/* Display Box */}
+                                    <div className="bg-light border rounded-4 p-3 text-center mb-3">
+                                        <div className="small text-muted fw-bold text-uppercase">Selected Table</div>
+                                        <div className="fs-1 fw-black font-mono text-dark my-1">
+                                            {numpadTableInput ? `T-${numpadTableInput}` : (selectedTable ? `T-${selectedTable.table_number}` : 'T-___')}
+                                        </div>
+                                        <div>
+                                            {numpadMatchedTable ? (
+                                                <span className={`badge ${
+                                                    numpadMatchedTable.status === 'available'
+                                                        ? 'bg-success-subtle text-success border border-success-subtle'
+                                                        : 'bg-danger-subtle text-danger border border-danger-subtle'
+                                                }`}>
+                                                    {numpadMatchedTable.status === 'available' ? 'Available' : 'Occupied'} • {numpadMatchedTable.area_name}
+                                                </span>
+                                            ) : (
+                                                <span className="small text-muted">Type digits (e.g. 1, 4, 12)</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Touch 3x4 Numpad */}
+                                    <div className="row g-2 mb-3">
+                                        {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(digit => (
+                                            <div key={digit} className="col-4">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleNumpadDigit(digit)}
+                                                    className="btn btn-light border py-3 fs-3 fw-bold font-mono rounded-3 w-100 shadow-2xs hover-lift"
+                                                >
+                                                    {digit}
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <div className="col-4">
+                                            <button
+                                                type="button"
+                                                onClick={handleNumpadClear}
+                                                className="btn btn-outline-danger py-3 fs-5 fw-bold rounded-3 w-100"
+                                            >
+                                                AC
+                                            </button>
+                                        </div>
+                                        <div className="col-4">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleNumpadDigit('0')}
+                                                className="btn btn-light border py-3 fs-3 fw-bold font-mono rounded-3 w-100 shadow-2xs hover-lift"
+                                            >
+                                                0
+                                            </button>
+                                        </div>
+                                        <div className="col-4">
+                                            <button
+                                                type="button"
+                                                onClick={handleNumpadBackspace}
+                                                className="btn btn-outline-warning text-dark py-3 fs-5 fw-bold rounded-3 w-100"
+                                            >
+                                                <i className="bi bi-backspace"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Confirm Button */}
+                                    <button
+                                        type="button"
+                                        onClick={() => applyNumpadTable()}
+                                        className="btn btn-primary btn-lg w-100 rounded-3 py-3 fw-bold shadow-sm"
+                                    >
+                                        Apply Table & Go To Menu <i className="bi bi-arrow-right ms-1"></i>
+                                    </button>
+
+                                    {/* Quick Available Tables List */}
+                                    <div className="mt-4 pt-3 border-top">
+                                        <div className="small fw-bold text-muted text-uppercase mb-2">Or Tap a Free Table:</div>
+                                        <div className="d-flex flex-wrap gap-1.5" style={{ maxHeight: '120px', overflowY: 'auto' }}>
+                                            {allTablesList.filter(t => t.status === 'available').map(tbl => (
+                                                <button
+                                                    key={tbl.id}
+                                                    type="button"
+                                                    onClick={() => applyNumpadTable(tbl)}
+                                                    className="btn btn-sm btn-outline-success font-mono fw-bold rounded-pill"
+                                                >
+                                                    T-{tbl.table_number}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* VIEW 3: ORDERS TRACKING */}
+                        {activeTab === 'orders' && (
+                            <div className="h-100 overflow-auto p-3">
+                                <div className="card border-0 shadow-sm rounded-4 overflow-hidden">
+                                    <div className="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+                                        <div className="d-flex gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => setOrdersFilter('all')}
+                                                className={`btn btn-sm rounded-pill fw-bold ${ordersFilter === 'all' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                                            >
+                                                All Orders ({recentOrders.length})
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setOrdersFilter('mine')}
+                                                className={`btn btn-sm rounded-pill fw-bold ${ordersFilter === 'mine' ? 'btn-dark' : 'btn-outline-secondary'}`}
+                                            >
+                                                My Orders ({recentOrders.filter(o => o.waiter_id === user.id).length})
+                                            </button>
+                                        </div>
+
+                                        <div className="small text-muted font-mono">
+                                            Thermal Printer: <strong>IRP 200D</strong>
+                                        </div>
+                                    </div>
+
+                                    <div className="table-responsive">
+                                        <table className="table table-hover align-middle mb-0 font-sans small">
+                                            <thead className="table-light text-muted uppercase">
+                                                <tr>
+                                                    <th>Order #</th>
+                                                    <th>Table</th>
+                                                    <th>Total</th>
+                                                    <th>Time</th>
+                                                    <th>Station Tickets</th>
+                                                    <th className="text-end">Reprint</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filteredOrders.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan="6" className="text-center py-5 text-muted">
+                                                            No orders placed yet.
+                                                        </td>
+                                                    </tr>
+                                                ) : (
+                                                    filteredOrders.map(order => (
+                                                        <tr key={order.id}>
+                                                            <td className="font-mono fw-bold text-primary">{order.order_number}</td>
+                                                            <td className="fw-bold">{order.table ? `T-${order.table.table_number}` : 'Takeaway'}</td>
+                                                            <td className="font-mono fw-bold">ETB {parseFloat(order.total_amount).toFixed(2)}</td>
+                                                            <td className="text-muted font-mono">{new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                                            <td>
+                                                                <div className="d-flex gap-1">
+                                                                    {order.tickets && order.tickets.map(t => (
+                                                                        <span key={t.id} className="badge bg-secondary">
+                                                                            {t.ticket_type === 'bar' ? 'Bar' : 'Kitchen'} #{t.ticket_number}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            </td>
+                                                            <td className="text-end">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        if (order.tickets && order.tickets.length > 0) {
+                                                                            order.tickets.forEach(ticket => {
+                                                                                const html = buildIrp200dTicketHtml(order, ticket, appName);
+                                                                                printIrp200d(html);
+                                                                            });
+                                                                        } else {
+                                                                            alert('No station tickets for this order.');
+                                                                        }
+                                                                    }}
+                                                                    className="btn btn-sm btn-outline-primary font-mono py-1 px-2"
+                                                                >
+                                                                    <i className="bi bi-printer-fill me-1"></i> IRP 200D
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* 3. ORDER DISPATCH SUCCESS MODAL (Bootstrap 5 Modal) */}
+            {successOrder && (
+                <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(15, 23, 42, 0.5)' }}>
+                    <div className="modal-dialog modal-dialog-centered" style={{ maxWidth: '400px' }}>
+                        <div className="modal-content border-0 shadow-lg rounded-4 p-4 text-center">
+                            <div className="bg-success-subtle text-success rounded-circle mx-auto p-3 mb-2 d-flex align-items-center justify-content-center" style={{ width: '60px', height: '60px' }}>
+                                <i className="bi bi-check-lg fs-2"></i>
+                            </div>
+
+                            <h5 className="fw-bold text-dark mb-1">Order Dispatched</h5>
+                            <div className="font-mono fw-bold fs-3 text-primary mb-2">
+                                {successOrder.order_number}
+                            </div>
+
+                            <p className="text-muted small mb-3">
+                                {successOrder.table ? `Table: T-${successOrder.table.table_number}` : 'Takeaway'} • Total: ETB {parseFloat(successOrder.total_amount).toFixed(2)}
+                            </p>
+
+                            <div className="p-3 bg-light rounded-3 text-start small font-mono mb-4 border">
+                                <div className="fw-bold text-dark mb-1 d-flex align-items-center gap-1.5">
+                                    <i className="bi bi-printer-fill text-success"></i>
+                                    <span>IRP 200D Tickets Printed:</span>
+                                </div>
+                                {successOrder.tickets && successOrder.tickets.map(ticket => (
+                                    <div key={ticket.id} className="text-success fw-bold">
+                                        ✔ {ticket.ticket_type === 'bar' ? 'Central Bar' : 'Main Kitchen'} Ticket #{ticket.ticket_number}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setSuccessOrder(null)}
+                                className="btn btn-dark btn-lg w-100 rounded-3 py-2.5 fw-bold"
+                            >
+                                Next Order
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
