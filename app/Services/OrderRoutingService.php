@@ -7,6 +7,7 @@ use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderItemModifier;
+use App\Models\OrderStation;
 use App\Models\OrderStatusHistory;
 use App\Models\RestaurantTable;
 use App\Models\SystemSetting;
@@ -152,11 +153,21 @@ class OrderRoutingService
                 'total_amount' => $totalAmount,
             ]);
 
+            // Resolve Destination Stations for Thermal Printing (IRP 200D)
+            $kitchenStation = OrderStation::where(function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            })->where('station_type', 'kitchen')->where('is_active', true)->first();
+
+            $barStation = OrderStation::where(function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            })->where('station_type', 'bar')->where('is_active', true)->first();
+
             // Automatic Kitchen Ticket Routing
             if (! empty($kitchenItems)) {
                 $kitchenTicket = KitchenBarTicket::create([
                     'branch_id' => $branchId,
                     'order_id' => $order->id,
+                    'order_station_id' => $kitchenStation?->id,
                     'ticket_number' => sprintf('KTK-%s-%04d', $order->id, count($order->tickets) + 1),
                     'department' => 'kitchen',
                     'status' => 'queued',
@@ -179,6 +190,7 @@ class OrderRoutingService
                 $barTicket = KitchenBarTicket::create([
                     'branch_id' => $branchId,
                     'order_id' => $order->id,
+                    'order_station_id' => $barStation?->id,
                     'ticket_number' => sprintf('BTK-%s-%04d', $order->id, count($order->tickets) + 1),
                     'department' => 'bar',
                     'status' => 'queued',

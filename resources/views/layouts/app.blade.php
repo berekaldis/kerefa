@@ -451,9 +451,9 @@
                 </a>
 
                 @if(auth()->user()->hasPermission('pos.view'))
-                <div class="sidebar-heading">Restaurant & POS</div>
-                <a href="{{ route('pos.terminal') }}" class="nav-link {{ request()->routeIs('pos.terminal') ? 'active' : '' }}">
-                    <i class="bi bi-grid-3x3-gap"></i> <span>POS Terminal</span>
+                <div class="sidebar-heading">POS Management</div>
+                <a href="{{ route('pos.terminal') }}" class="nav-link" target="_blank">
+                    <i class="bi bi-grid-3x3-gap-fill text-warning"></i> <span>Open POS Terminal <i class="bi bi-box-arrow-up-right ms-1 text-muted" style="font-size: 0.65rem;"></i></span>
                 </a>
                 <a href="{{ route('tables.index') }}" class="nav-link {{ request()->routeIs('tables.*') ? 'active' : '' }}">
                     <i class="bi bi-grid-3x3"></i> <span>Table Floor Plan</span>
@@ -463,15 +463,9 @@
                 </a>
                 @if(auth()->user()->hasPermission('pos.menu.manage'))
                 <a href="{{ route('menu.index') }}" class="nav-link {{ request()->routeIs('menu.*') ? 'active' : '' }}">
-                    <i class="bi bi-card-list"></i> <span>Menu Products</span>
+                    <i class="bi bi-card-list"></i> <span>Menu & Products</span>
                 </a>
                 @endif
-                <a href="{{ route('kds.index') }}" class="nav-link {{ request()->routeIs('kds.*') ? 'active' : '' }}">
-                    <i class="bi bi-tv"></i> <span>Kitchen (KDS)</span>
-                </a>
-                <a href="{{ route('bds.index') }}" class="nav-link {{ request()->routeIs('bds.*') ? 'active' : '' }}">
-                    <i class="bi bi-cup-straw"></i> <span>Bar (BDS)</span>
-                </a>
                 @endif
 
                 @if(auth()->user()->hasPermission('inventory.view'))
@@ -506,7 +500,17 @@
                 @endif
 
                 @if(auth()->user()->hasPermission('users.view') || auth()->user()->hasPermission('branches.view') || auth()->user()->hasPermission('settings.view'))
-                <div class="sidebar-heading">Administration</div>
+                <div class="sidebar-heading" style="color: #f59e0b;"><i class="bi bi-shield-lock me-1"></i> Admin Panel</div>
+
+                @if(auth()->user()->hasPermission('settings.view'))
+                <a href="{{ route('admin.stations.index') }}" class="nav-link {{ request()->routeIs('admin.stations.*') ? 'active' : '' }}">
+                    <i class="bi bi-printer-fill text-warning"></i> <span>Station Mapping</span>
+                </a>
+
+                <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                    <i class="bi bi-gear-fill"></i> <span>System Settings</span>
+                </a>
+                @endif
 
                 @if(auth()->user()->hasPermission('users.view'))
                 <a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}">
@@ -529,12 +533,6 @@
                 @if(auth()->user()->hasPermission('audit.view'))
                 <a href="{{ route('audit-logs.index') }}" class="nav-link {{ request()->routeIs('audit-logs.*') ? 'active' : '' }}">
                     <i class="bi bi-clock-history"></i> <span>Audit Trail</span>
-                </a>
-                @endif
-
-                @if(auth()->user()->hasPermission('settings.view'))
-                <a href="{{ route('settings.index') }}" class="nav-link {{ request()->routeIs('settings.*') ? 'active' : '' }}">
-                    <i class="bi bi-gear"></i> <span>System Settings</span>
                 </a>
                 @endif
                 @endif
@@ -594,14 +592,13 @@
                 <div class="d-flex align-items-center gap-2 gap-md-3">
                     <!-- Quick Links for Fast Navigation -->
                     @if(auth()->user()->hasPermission('pos.view'))
-                    <a href="{{ route('pos.terminal') }}" class="btn btn-sm btn-outline-dark d-none d-md-inline-flex align-items-center gap-1 rounded-pill px-3">
-                        <i class="bi bi-grid-3x3-gap-fill text-warning"></i> <span>POS</span>
+                    <a href="{{ route('pos.terminal') }}" target="_blank" class="btn btn-sm btn-kerefa d-none d-md-inline-flex align-items-center gap-1 rounded-pill px-3 shadow-sm">
+                        <i class="bi bi-grid-3x3-gap-fill"></i> <span>Launch POS Terminal</span>
                     </a>
-                    <a href="{{ route('kds.index') }}" class="btn btn-sm btn-outline-danger d-none d-md-inline-flex align-items-center gap-1 rounded-pill px-3">
-                        <i class="bi bi-fire"></i> <span>KDS</span>
-                    </a>
-                    <a href="{{ route('bds.index') }}" class="btn btn-sm btn-outline-info d-none d-md-inline-flex align-items-center gap-1 rounded-pill px-3">
-                        <i class="bi bi-cup-straw"></i> <span>BDS</span>
+                    @endif
+                    @if(auth()->user()->hasPermission('settings.view'))
+                    <a href="{{ route('admin.stations.index') }}" class="btn btn-sm btn-outline-dark d-none d-md-inline-flex align-items-center gap-1 rounded-pill px-3">
+                        <i class="bi bi-printer-fill text-warning"></i> <span>Station Mapping</span>
                     </a>
                     @endif
 

@@ -71,14 +71,14 @@
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="badge {{ $ticket->department === 'kitchen' ? 'bg-danger' : 'bg-info text-dark' }} text-uppercase rounded-pill px-2 py-1">
                                         <i class="bi {{ $ticket->department === 'kitchen' ? 'bi-fire' : 'bi-cup-straw' }} me-1"></i>
-                                        {{ $ticket->department }} Ticket
+                                        {{ $ticket->station?->name ?? ucfirst($ticket->department) . ' Ticket' }}
                                     </span>
                                     <strong class="font-mono text-dark">{{ $ticket->ticket_number }}</strong>
                                 </div>
                                 <div class="d-flex align-items-center gap-2">
                                     <!-- Print to IRP 200D Button -->
                                     <button type="button" class="btn btn-sm btn-white border bg-white shadow-2xs font-mono rounded-pill px-3 py-1" onclick="printOrderTicketDirect({{ $ticket->id }})">
-                                        <i class="bi bi-printer-fill text-warning me-1"></i> Print {{ $ticket->department === 'kitchen' ? 'KOT' : 'BOT' }} (IRP 200D)
+                                        <i class="bi bi-printer-fill text-warning me-1"></i> Print to {{ $ticket->station?->printer_model ?? 'IRP 200D' }}
                                     </button>
                                     <span class="badge bg-white text-dark border text-uppercase rounded-pill px-2 py-1 font-mono" style="font-size: 0.7rem;">
                                         {{ $ticket->status }}
@@ -107,8 +107,12 @@
                             <div id="ticketPrintData_{{ $ticket->id }}" style="display: none;">
                                 <div class="irp200d-ticket-header">
                                     <div class="irp200d-title">KEREFA RESTAURANT</div>
-                                    <div style="font-size: 10px; margin-top: 1px;">Thermal Order Printer - IRP 200D</div>
-                                    <div class="irp200d-banner">*** {{ strtoupper($ticket->department) }} ORDER TICKET ({{ $ticket->department === 'kitchen' ? 'KOT' : 'BOT' }}) ***</div>
+                                    <div style="font-size: 10px; margin-top: 1px;">Thermal Order Printer - {{ $ticket->station?->printer_model ?? 'IRP 200D' }}</div>
+                                    <div class="irp200d-banner">*** {{ strtoupper($ticket->station?->name ?? ($ticket->department . ' Station')) }} ***</div>
+                                </div>
+                                <div class="irp200d-meta-row">
+                                    <span><strong>STATION:</strong> {{ $ticket->station?->name ?? ucfirst($ticket->department) }}</span>
+                                    <span><strong>PRINTER:</strong> {{ $ticket->station?->printer_model ?? 'IRP 200D' }}</span>
                                 </div>
                                 <div class="irp200d-meta-row">
                                     <span><strong>TICKET :</strong> {{ $ticket->ticket_number }}</span>

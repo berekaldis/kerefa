@@ -13,6 +13,7 @@ class MenuCategory extends Model
 
     protected $fillable = [
         'branch_id',
+        'order_station_id',
         'name',
         'slug',
         'icon',
@@ -34,6 +35,11 @@ class MenuCategory extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function orderStation(): BelongsTo
+    {
+        return $this->belongsTo(OrderStation::class, 'order_station_id');
     }
 
     public function menuItems(): HasMany

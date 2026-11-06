@@ -112,11 +112,11 @@
                         <div>
                             <div class="d-flex align-items-center gap-2 mb-2">
                                 <span class="badge bg-warning bg-opacity-10 text-warning p-2 rounded-circle"><i class="bi bi-grid-3x3-gap-fill fs-5"></i></span>
-                                <h6 class="fw-bold mb-0 text-dark">POS Terminal</h6>
+                                <h6 class="fw-bold mb-0 text-dark">Dedicated POS</h6>
                             </div>
-                            <p class="text-muted small mb-3">Touchscreen order taking, dining tables layout, and instant kitchen/bar dispatch.</p>
+                            <p class="text-muted small mb-3">Touchscreen order terminal, table seating, and instant thermal printing to IRP 200D.</p>
                         </div>
-                        <a href="{{ route('pos.terminal') }}" class="btn btn-sm btn-kerefa rounded-pill w-100">Launch POS</a>
+                        <a href="{{ route('pos.terminal') }}" target="_blank" class="btn btn-sm btn-kerefa rounded-pill w-100">Launch POS Terminal <i class="bi bi-box-arrow-up-right ms-1 small"></i></a>
                     </div>
                 </div>
 
@@ -124,25 +124,12 @@
                     <div class="p-3 border rounded-4 bg-white card-hover h-100 d-flex flex-column justify-content-between shadow-2xs">
                         <div>
                             <div class="d-flex align-items-center gap-2 mb-2">
-                                <span class="badge bg-danger bg-opacity-10 text-danger p-2 rounded-circle"><i class="bi bi-tv-fill fs-5"></i></span>
-                                <h6 class="fw-bold mb-0 text-dark">Kitchen KDS</h6>
+                                <span class="badge bg-success bg-opacity-10 text-success p-2 rounded-circle"><i class="bi bi-receipt fs-5"></i></span>
+                                <h6 class="fw-bold mb-0 text-dark">Orders Tracking</h6>
                             </div>
-                            <p class="text-muted small mb-3">Dedicated Kitchen Display System for live food preparation ticket routing and status.</p>
+                            <p class="text-muted small mb-3">POS order tracking, dine-in, takeaway & delivery history, and thermal ticket reprinting.</p>
                         </div>
-                        <a href="{{ route('kds.index') }}" class="btn btn-sm btn-outline-danger rounded-pill w-100">Open Kitchen KDS</a>
-                    </div>
-                </div>
-
-                <div class="col-12 col-sm-6 col-lg-3">
-                    <div class="p-3 border rounded-4 bg-white card-hover h-100 d-flex flex-column justify-content-between shadow-2xs">
-                        <div>
-                            <div class="d-flex align-items-center gap-2 mb-2">
-                                <span class="badge bg-info bg-opacity-10 text-info p-2 rounded-circle"><i class="bi bi-cup-straw fs-5"></i></span>
-                                <h6 class="fw-bold mb-0 text-dark">Bar BDS</h6>
-                            </div>
-                            <p class="text-muted small mb-3">Dedicated Bar Display System for live beverage, juice, and coffee ticket routing.</p>
-                        </div>
-                        <a href="{{ route('bds.index') }}" class="btn btn-sm btn-outline-info rounded-pill w-100">Open Bar BDS</a>
+                        <a href="{{ route('orders.index') }}" class="btn btn-sm btn-outline-success rounded-pill w-100">View Orders</a>
                     </div>
                 </div>
 
@@ -151,11 +138,24 @@
                         <div>
                             <div class="d-flex align-items-center gap-2 mb-2">
                                 <span class="badge bg-primary bg-opacity-10 text-primary p-2 rounded-circle"><i class="bi bi-grid-3x3 fs-5"></i></span>
-                                <h6 class="fw-bold mb-0 text-dark">Floor Plan</h6>
+                                <h6 class="fw-bold mb-0 text-dark">Table Floor Plan</h6>
                             </div>
                             <p class="text-muted small mb-3">Floor seating occupancy, table status, guest table transfer, and table merging.</p>
                         </div>
                         <a href="{{ route('tables.index') }}" class="btn btn-sm btn-outline-primary rounded-pill w-100">View Tables</a>
+                    </div>
+                </div>
+
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="p-3 border rounded-4 bg-white card-hover h-100 d-flex flex-column justify-content-between shadow-2xs border-warning">
+                        <div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge bg-warning bg-opacity-10 text-warning p-2 rounded-circle"><i class="bi bi-printer-fill fs-5"></i></span>
+                                <h6 class="fw-bold mb-0 text-dark">Station Mapping</h6>
+                            </div>
+                            <p class="text-muted small mb-3">Configure kitchen and bar order stations and assign thermal printers (Model: IRP 200D).</p>
+                        </div>
+                        <a href="{{ route('admin.stations.index') }}" class="btn btn-sm btn-outline-dark rounded-pill w-100">Configure Stations</a>
                     </div>
                 </div>
 

@@ -85,7 +85,7 @@ class PosController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => __('Order :number created and routed successfully.', ['number' => $order->order_number]),
-                'order' => $order->load(['items.menuItem', 'tickets.items.orderItem.menuItem', 'table.diningArea', 'waiter']),
+                'order' => $order->load(['items.menuItem', 'tickets.items.orderItem.menuItem', 'tickets.station', 'table.diningArea', 'waiter']),
             ]);
         }
 

@@ -14,6 +14,7 @@ class KitchenBarTicket extends Model
     protected $fillable = [
         'branch_id',
         'order_id',
+        'order_station_id',
         'ticket_number',
         'department',
         'status',
@@ -46,6 +47,11 @@ class KitchenBarTicket extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function station(): BelongsTo
+    {
+        return $this->belongsTo(OrderStation::class, 'order_station_id');
     }
 
     public function items(): HasMany

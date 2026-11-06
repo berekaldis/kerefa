@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.pos')
 
 @section('title', 'POS Order Terminal')
 
@@ -661,15 +661,17 @@
         if (order.tickets && order.tickets.length > 0) {
             order.tickets.forEach(ticket => {
                 const isKitchen = ticket.department === 'kitchen';
+                const stationName = ticket.station ? ticket.station.name : (isKitchen ? 'Main Kitchen Station' : 'Central Bar Station');
+                const printerModel = ticket.station ? ticket.station.printer_model : 'IRP 200D';
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = `btn btn-sm ${isKitchen ? 'btn-outline-danger' : 'btn-outline-primary'} d-flex align-items-center justify-content-between p-2 rounded-3`;
                 btn.innerHTML = `
                     <span>
                         <i class="bi ${isKitchen ? 'bi-fire' : 'bi-cup-straw'} me-1"></i>
-                        Print <strong>${isKitchen ? 'Kitchen KOT' : 'Bar BOT'}</strong> (${ticket.ticket_number})
+                        Print <strong>${stationName}</strong> (${ticket.ticket_number})
                     </span>
-                    <span class="badge ${isKitchen ? 'bg-danger' : 'bg-primary'} text-white font-mono"><i class="bi bi-printer me-1"></i>IRP 200D</span>
+                    <span class="badge ${isKitchen ? 'bg-danger' : 'bg-primary'} text-white font-mono"><i class="bi bi-printer me-1"></i>${printerModel}</span>
                 `;
                 btn.onclick = () => printDepartmentTicket(ticket, order);
                 printBtnsContainer.appendChild(btn);
@@ -694,7 +696,9 @@
     // =========================================================================
     function printDepartmentTicket(ticket, order) {
         const isKitchen = ticket.department === 'kitchen';
-        const titleBanner = isKitchen ? '*** KITCHEN ORDER TICKET (KOT) ***' : '*** BAR ORDER TICKET (BOT) ***';
+        const stationName = ticket.station ? ticket.station.name : (isKitchen ? 'Main Kitchen Station' : 'Central Bar Station');
+        const printerModel = ticket.station ? ticket.station.printer_model : 'IRP 200D';
+        const titleBanner = `*** ${stationName.toUpperCase()} ORDER TICKET ***`;
         const dateStr = new Date().toLocaleString();
         const tableName = order.table ? `TABLE ${order.table.table_number}` : order.order_type.toUpperCase();
         const areaName = order.table && order.table.dining_area ? order.table.dining_area.name : '';
@@ -722,10 +726,14 @@
         const html = `
             <div class="irp200d-ticket-header">
                 <div class="irp200d-title">KEREFA RESTAURANT</div>
-                <div style="font-size: 10px; margin-top: 1px;">Thermal Order Printer - IRP 200D</div>
+                <div style="font-size: 10px; margin-top: 1px;">Thermal Order Printer - ${printerModel}</div>
                 <div class="irp200d-banner">${titleBanner}</div>
             </div>
 
+            <div class="irp200d-meta-row">
+                <span><strong>STATION:</strong> ${stationName}</span>
+                <span><strong>PRINTER:</strong> ${printerModel}</span>
+            </div>
             <div class="irp200d-meta-row">
                 <span><strong>TICKET :</strong> ${ticket.ticket_number}</span>
                 <span><strong>ORDER :</strong> ${order.order_number}</span>

@@ -7,6 +7,7 @@ use App\Models\DiningArea;
 use App\Models\MenuCategory;
 use App\Models\MenuItem;
 use App\Models\MenuItemModifier;
+use App\Models\OrderStation;
 use App\Models\RestaurantTable;
 use Illuminate\Database\Seeder;
 
@@ -21,6 +22,37 @@ class RmsPosSeeder extends Seeder
         if (! $mainBranch) {
             return;
         }
+
+        // 0. Order Stations (Thermal Order Printers - Model IRP 200D)
+        $kitchenStation = OrderStation::updateOrCreate(
+            ['branch_id' => $mainBranch->id, 'code' => 'KITCHEN_MAIN'],
+            [
+                'name' => 'Main Kitchen Station',
+                'station_type' => 'kitchen',
+                'printer_model' => 'IRP 200D',
+                'printer_connection' => 'thermal_80mm',
+                'paper_width_mm' => 80,
+                'auto_print' => true,
+                'print_copies' => 1,
+                'is_active' => true,
+                'notes' => 'Primary hot kitchen cooking line thermal printer',
+            ]
+        );
+
+        $barStation = OrderStation::updateOrCreate(
+            ['branch_id' => $mainBranch->id, 'code' => 'BAR_MAIN'],
+            [
+                'name' => 'Central Bar Station',
+                'station_type' => 'bar',
+                'printer_model' => 'IRP 200D',
+                'printer_connection' => 'thermal_80mm',
+                'paper_width_mm' => 80,
+                'auto_print' => true,
+                'print_copies' => 1,
+                'is_active' => true,
+                'notes' => 'Central beverage, juice and traditional coffee station thermal printer',
+            ]
+        );
 
         // 1. Dining Areas
         $areas = [
@@ -91,9 +123,11 @@ class RmsPosSeeder extends Seeder
 
         $categoryModels = [];
         foreach ($categories as $cat) {
+            $isBar = in_array($cat['slug'], ['hot-drinks', 'juices', 'beers']);
             $categoryModels[$cat['slug']] = MenuCategory::updateOrCreate(
                 ['branch_id' => $mainBranch->id, 'slug' => $cat['slug']],
                 [
+                    'order_station_id' => $isBar ? $barStation->id : $kitchenStation->id,
                     'name' => $cat['name'],
                     'icon' => $cat['icon'],
                     'sort_order' => $cat['sort'],
@@ -249,6 +283,7 @@ class RmsPosSeeder extends Seeder
                     ['branch_id' => $mainBranch->id, 'code' => $item['code']],
                     [
                         'category_id' => $categoryModels[$item['cat']]->id,
+                        'order_station_id' => $item['dept'] === 'bar' ? $barStation->id : $kitchenStation->id,
                         'name' => $item['name'],
                         'description' => $item['desc'],
                         'price' => $item['price'],

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\StationMappingController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Core\AuditLogController;
 use App\Http\Controllers\Core\BranchContextController;
@@ -8,8 +9,6 @@ use App\Http\Controllers\Core\DashboardController;
 use App\Http\Controllers\Core\RoleController;
 use App\Http\Controllers\Core\SystemSettingController;
 use App\Http\Controllers\Core\UserController;
-use App\Http\Controllers\Pos\BarDisplayController;
-use App\Http\Controllers\Pos\KitchenDisplayController;
 use App\Http\Controllers\Pos\MenuController;
 use App\Http\Controllers\Pos\OrderController;
 use App\Http\Controllers\Pos\PosController;
@@ -54,13 +53,14 @@ Route::middleware('auth')->group(function () {
     Route::put('/menu/{menu}', [MenuController::class, 'update'])->name('menu.update');
     Route::post('/menu/{menu}/toggle-availability', [MenuController::class, 'toggleAvailability'])->name('menu.toggle-availability');
 
-    Route::get('/kds', [KitchenDisplayController::class, 'index'])->name('kds.index');
-    Route::post('/kds/{ticket}/status', [KitchenDisplayController::class, 'updateStatus'])->name('kds.ticket.status');
+    // Admin Panel: Station Mapping (Thermal Order Printers - Model IRP 200D)
+    Route::get('/admin/stations', [StationMappingController::class, 'index'])->name('admin.stations.index');
+    Route::post('/admin/stations', [StationMappingController::class, 'store'])->name('admin.stations.store');
+    Route::put('/admin/stations/{station}', [StationMappingController::class, 'update'])->name('admin.stations.update');
+    Route::delete('/admin/stations/{station}', [StationMappingController::class, 'destroy'])->name('admin.stations.destroy');
+    Route::post('/admin/stations/{station}/toggle', [StationMappingController::class, 'toggle'])->name('admin.stations.toggle');
 
-    Route::get('/bds', [BarDisplayController::class, 'index'])->name('bds.index');
-    Route::post('/bds/{ticket}/status', [BarDisplayController::class, 'updateStatus'])->name('bds.ticket.status');
-
-    // Phase 2: Core & Administration
+    // Admin Panel: Core & Administration
     Route::resource('users', UserController::class)->except(['show', 'destroy']);
     Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
 
