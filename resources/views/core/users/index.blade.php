@@ -81,7 +81,9 @@
                             <th>Role(s)</th>
                             <th>Status</th>
                             <th>Last Login</th>
+                            @if(auth()->user()->hasPermission('users.edit'))
                             <th class="pe-3 text-end">Actions</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -118,27 +120,27 @@
                                 <td class="small text-muted">
                                     {{ $u->last_login_at ? $u->last_login_at->format('M d, Y H:i') : 'Never' }}
                                 </td>
+                                @if(auth()->user()->hasPermission('users.edit'))
                                 <td class="pe-3 text-end">
                                     <div class="btn-group btn-group-sm">
-                                        @if(auth()->user()->hasPermission('users.edit'))
-                                            <a href="{{ route('users.edit', $u) }}" class="btn btn-outline-secondary" title="Edit User">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
-                                            @if($u->id !== auth()->id())
-                                                <form method="POST" action="{{ route('users.toggle-status', $u) }}" class="d-inline" onsubmit="return confirm('Change active status for {{ $u->name }}?');">
-                                                    @csrf
-                                                    <button type="submit" class="btn {{ $u->is_active ? 'btn-outline-warning' : 'btn-outline-success' }}" title="{{ $u->is_active ? 'Deactivate' : 'Activate' }}">
-                                                        <i class="bi {{ $u->is_active ? 'bi-person-dash' : 'bi-person-check' }}"></i>
-                                                    </button>
-                                                </form>
-                                            @endif
+                                        <a href="{{ route('users.edit', $u) }}" class="btn btn-outline-secondary" title="Edit User">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        @if($u->id !== auth()->id())
+                                            <form method="POST" action="{{ route('users.toggle-status', $u) }}" class="d-inline" onsubmit="return confirm('Change active status for {{ $u->name }}?');">
+                                                @csrf
+                                                <button type="submit" class="btn {{ $u->is_active ? 'btn-outline-warning' : 'btn-outline-success' }}" title="{{ $u->is_active ? 'Deactivate' : 'Activate' }}">
+                                                    <i class="bi {{ $u->is_active ? 'bi-person-dash' : 'bi-person-check' }}"></i>
+                                                </button>
+                                            </form>
                                         @endif
                                     </div>
                                 </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">No users matched your search criteria.</td>
+                                <td colspan="{{ auth()->user()->hasPermission('users.edit') ? 8 : 7 }}" class="text-center py-4 text-muted">No users matched your search criteria.</td>
                             </tr>
                         @endforelse
                     </tbody>

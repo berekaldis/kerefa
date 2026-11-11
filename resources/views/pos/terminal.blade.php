@@ -17,11 +17,14 @@
     "waiters": @json($waiters ?? []),
     "routes": {
         "storeOrder": "{{ route('pos.orders.store') }}",
+        "addItemsBase": "{{ url('/pos/orders') }}",
+        "settleBase": "{{ url('/pos/orders') }}",
         "dashboard": "{{ route('dashboard') }}",
         "tablesIndex": "{{ route('tables.index') }}"
     },
     "csrfToken": "{{ csrf_token() }}",
-    "appName": "{{ config('app.name', 'Kerefa Restaurant') }}"
+    "appName": "{{ config('app.name', 'Kerefa Restaurant') }}",
+    "permissions": @json(auth()->user()->isSuperAdmin() ? ['*'] : auth()->user()->roles->flatMap->permissions->pluck('slug')->unique()->values())
 }
 </script>
 

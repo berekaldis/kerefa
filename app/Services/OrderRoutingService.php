@@ -406,4 +406,201 @@ class OrderRoutingService
             );
         });
     }
+
+    /**
+     * Add additional items to an existing held/open order and route supplementary tickets to IRP 200D.
+     *
+     * @param  array<int, array<string, mixed>>  $newItemsData
+     * @return array{order: Order, new_tickets: array<KitchenBarTicket>}
+     */
+    public function addItemsToExistingOrder(Order $order, array $newItemsData, User $waiter): array
+    {
+        return DB::transaction(function () use ($order, $newItemsData) {
+            $branchId = $order->branch_id;
+
+            if (in_array($order->status, ['completed', 'cancelled'])) {
+                throw ValidationException::withMessages([
+                    'order' => [__('Cannot add items to a completed or cancelled order.')],
+                ]);
+            }
+
+            $kitchenItems = [];
+            $barItems = [];
+            $additionalSubtotal = 0;
+
+            foreach ($newItemsData as $row) {
+                $menuItem = MenuItem::findOrFail($row['menu_item_id']);
+                $qty = (float) ($row['quantity'] ?? 1);
+                $unitPrice = (float) $menuItem->price;
+                $itemSubtotal = $unitPrice * $qty;
+
+                $orderItem = OrderItem::create([
+                    'order_id' => $order->id,
+                    'menu_item_id' => $menuItem->id,
+                    'quantity' => $qty,
+                    'unit_price' => $unitPrice,
+                    'subtotal' => $itemSubtotal,
+                    'special_instructions' => $row['special_instructions'] ?? ($row['notes'] ?? null),
+                    'status' => 'sent',
+                    'preparation_department' => $menuItem->preparation_department,
+                ]);
+
+                if (! empty($row['modifiers'])) {
+                    foreach ($row['modifiers'] as $modId) {
+                        $modifier = $menuItem->modifiers()->find($modId);
+                        if ($modifier) {
+                            OrderItemModifier::create([
+                                'order_item_id' => $orderItem->id,
+                                'menu_item_modifier_id' => $modifier->id,
+                                'name' => $modifier->name,
+                                'unit_price' => $modifier->additional_price,
+                            ]);
+                            $modCost = ((float) $modifier->additional_price) * $qty;
+                            $itemSubtotal += $modCost;
+                        }
+                    }
+                    $orderItem->subtotal = $itemSubtotal;
+                    $orderItem->save();
+                }
+
+                $additionalSubtotal += $itemSubtotal;
+
+                if ($menuItem->preparation_department === 'bar') {
+                    $barItems[] = $orderItem;
+                } else {
+                    $kitchenItems[] = $orderItem;
+                }
+            }
+
+            // Recalculate order totals
+            $newSubtotal = (float) $order->subtotal + $additionalSubtotal;
+            $serviceChargeRate = (float) SystemSetting::get('service_charge_rate', 10.00, $branchId);
+            $vatRate = (float) SystemSetting::get('vat_rate', 15.00, $branchId);
+
+            $serviceCharge = $order->order_type === 'dine_in' ? ($newSubtotal * ($serviceChargeRate / 100)) : 0;
+            $taxAmount = ($newSubtotal + $serviceCharge) * ($vatRate / 100);
+            $totalAmount = $newSubtotal + $serviceCharge + $taxAmount;
+
+            $order->update([
+                'subtotal' => $newSubtotal,
+                'service_charge_amount' => $serviceCharge,
+                'tax_amount' => $taxAmount,
+                'total_amount' => $totalAmount,
+                'status' => 'in_preparation',
+            ]);
+
+            // Destination stations for Thermal Printing (IRP 200D)
+            $kitchenStation = OrderStation::where(function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            })->where('station_type', 'kitchen')->where('is_active', true)->first();
+
+            $barStation = OrderStation::where(function ($q) use ($branchId) {
+                $q->where('branch_id', $branchId)->orWhereNull('branch_id');
+            })->where('station_type', 'bar')->where('is_active', true)->first();
+
+            $newTickets = [];
+            $ticketSequence = $order->tickets()->count() + 1;
+
+            if (! empty($kitchenItems)) {
+                $kitchenTicket = KitchenBarTicket::create([
+                    'branch_id' => $branchId,
+                    'order_id' => $order->id,
+                    'order_station_id' => $kitchenStation?->id,
+                    'ticket_number' => sprintf('KTK-ADD-%s-%04d', $order->id, $ticketSequence++),
+                    'department' => 'kitchen',
+                    'status' => 'queued',
+                    'sent_at' => now(),
+                ]);
+
+                foreach ($kitchenItems as $item) {
+                    TicketItem::create([
+                        'ticket_id' => $kitchenTicket->id,
+                        'order_item_id' => $item->id,
+                        'quantity' => $item->quantity,
+                        'special_instructions' => $item->special_instructions,
+                        'status' => 'queued',
+                    ]);
+                }
+                $newTickets[] = $kitchenTicket->load(['station', 'items.orderItem.menuItem']);
+            }
+
+            if (! empty($barItems)) {
+                $barTicket = KitchenBarTicket::create([
+                    'branch_id' => $branchId,
+                    'order_id' => $order->id,
+                    'order_station_id' => $barStation?->id,
+                    'ticket_number' => sprintf('BTK-ADD-%s-%04d', $order->id, $ticketSequence++),
+                    'department' => 'bar',
+                    'status' => 'queued',
+                    'sent_at' => now(),
+                ]);
+
+                foreach ($barItems as $item) {
+                    TicketItem::create([
+                        'ticket_id' => $barTicket->id,
+                        'order_item_id' => $item->id,
+                        'quantity' => $item->quantity,
+                        'special_instructions' => $item->special_instructions,
+                        'status' => 'queued',
+                    ]);
+                }
+                $newTickets[] = $barTicket->load(['station', 'items.orderItem.menuItem']);
+            }
+
+            $this->auditLog->log(
+                action: 'add_items_to_order',
+                module: 'pos',
+                description: 'Added '.count($newItemsData)." new item(s) to Order {$order->order_number}",
+                record: $order,
+                branchId: $order->branch_id
+            );
+
+            return [
+                'order' => $order->fresh(['items.menuItem', 'tickets.station', 'tickets.items.orderItem.menuItem', 'table.diningArea', 'waiter']),
+                'new_tickets' => $newTickets,
+            ];
+        });
+    }
+
+    /**
+     * Settle / Mark an order as Paid and release dining table.
+     */
+    public function settleOrder(Order $order, string $paymentMethod, float $amountTendered, User $cashier): Order
+    {
+        return DB::transaction(function () use ($order, $paymentMethod, $amountTendered, $cashier) {
+            $paymentNote = sprintf('[PAID via %s - Tendered: ETB %.2f]', strtoupper($paymentMethod), $amountTendered);
+            $existingNotes = $order->notes ? ($order->notes.' '.$paymentNote) : $paymentNote;
+
+            $order->update([
+                'status' => 'completed',
+                'cashier_id' => $cashier->id,
+                'notes' => $existingNotes,
+            ]);
+
+            // Release table
+            if ($order->restaurant_table_id && $order->table) {
+                $order->table->status = 'available';
+                $order->table->save();
+            }
+
+            OrderStatusHistory::create([
+                'order_id' => $order->id,
+                'status_from' => $order->getOriginal('status') ?? 'in_preparation',
+                'status_to' => 'completed',
+                'changed_by' => $cashier->id,
+                'comments' => "Order settled / paid via {$paymentMethod}",
+                'created_at' => now(),
+            ]);
+
+            $this->auditLog->log(
+                action: 'settle_order',
+                module: 'pos',
+                description: "Order {$order->order_number} settled via {$paymentMethod} (ETB {$amountTendered})",
+                record: $order,
+                branchId: $order->branch_id
+            );
+
+            return $order->fresh(['items.menuItem', 'tickets.station', 'table.diningArea', 'waiter', 'cashier']);
+        });
+    }
 }

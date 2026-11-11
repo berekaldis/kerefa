@@ -15,11 +15,13 @@
                 </div>
             </div>
         </div>
+        @if(auth()->user()->hasPermission('settings.manage'))
         <div class="d-flex gap-2">
             <button type="button" class="btn btn-sm btn-kerefa rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addStationModal">
                 <i class="bi bi-plus-lg me-1"></i> Add Station
             </button>
         </div>
+        @endif
     </div>
 
     <!-- Overview Bar -->
@@ -143,6 +145,7 @@
                             <i class="bi bi-printer-fill text-warning me-1"></i> Test IRP 200D
                         </button>
 
+                        @if(auth()->user()->hasPermission('settings.manage'))
                         <div class="d-flex gap-1">
                             <form method="POST" action="{{ route('admin.stations.toggle', $st) }}" class="d-inline">
                                 @csrf
@@ -161,6 +164,7 @@
                                 </button>
                             </form>
                         </div>
+                        @endif
                     </div>
                 </div>
             </div>

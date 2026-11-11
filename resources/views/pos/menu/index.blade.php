@@ -15,9 +15,11 @@
                 </div>
             </div>
         </div>
+        @if(auth()->user()->hasPermission('pos.menu.manage'))
         <button type="button" class="btn btn-sm btn-kerefa rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addMenuItemModal">
             <i class="bi bi-plus-lg me-1"></i> Add Product
         </button>
+        @endif
     </div>
 
     <!-- Filters Card -->
@@ -83,7 +85,9 @@
                             <th class="text-end">Price</th>
                             <th class="text-end">Cost</th>
                             <th>Availability</th>
+                            @if(auth()->user()->hasPermission('pos.menu.manage'))
                             <th class="pe-3 text-end">Action</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -116,6 +120,7 @@
                                         <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill px-2 py-1">Sold Out (86'd)</span>
                                     @endif
                                 </td>
+                                @if(auth()->user()->hasPermission('pos.menu.manage'))
                                 <td class="pe-3 text-end">
                                     <div class="btn-group btn-group-sm">
                                         <form method="POST" action="{{ route('menu.toggle-availability', $item) }}" class="d-inline">
@@ -129,6 +134,7 @@
                                         </button>
                                     </div>
                                 </td>
+                                @endif
                             </tr>
 
                             <!-- Edit Menu Item Modal -->

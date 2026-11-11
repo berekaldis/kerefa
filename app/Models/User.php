@@ -79,13 +79,27 @@ class User extends Authenticatable
         return $this->roles->pluck('slug')->intersect($roles)->isNotEmpty();
     }
 
+    /**
+     * In-memory cache for permission slugs on this user instance.
+     *
+     * @var array<string>|null
+     */
+    protected ?array $memoizedPermissions = null;
+
     public function hasPermission(string $permissionSlug): bool
     {
         if ($this->isSuperAdmin()) {
             return true;
         }
 
-        return $this->roles->flatMap(fn (Role $role) => $role->permissions)->contains('slug', $permissionSlug);
+        if ($this->memoizedPermissions === null) {
+            $this->memoizedPermissions = $this->roles
+                ->flatMap(fn (Role $role) => $role->permissions)
+                ->pluck('slug')
+                ->all();
+        }
+
+        return in_array($permissionSlug, $this->memoizedPermissions, true);
     }
 
     public function canAccessBranch(int|Branch $branch): bool

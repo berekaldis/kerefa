@@ -32,7 +32,9 @@
                             <th>Departments</th>
                             <th>Staff Assigned</th>
                             <th>Status</th>
+                            @if(auth()->user()->hasPermission('branches.manage'))
                             <th class="pe-3 text-end">Actions</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody>
@@ -69,17 +71,17 @@
                                         <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Inactive</span>
                                     @endif
                                 </td>
+                                @if(auth()->user()->hasPermission('branches.manage'))
                                 <td class="pe-3 text-end">
-                                    @if(auth()->user()->hasPermission('branches.manage'))
-                                        <a href="{{ route('branches.edit', $b) }}" class="btn btn-sm btn-outline-secondary">
-                                            <i class="bi bi-pencil me-1"></i> Edit
-                                        </a>
-                                    @endif
+                                    <a href="{{ route('branches.edit', $b) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil me-1"></i> Edit
+                                    </a>
                                 </td>
+                                @endif
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">No branches found.</td>
+                                <td colspan="{{ auth()->user()->hasPermission('branches.manage') ? 8 : 7 }}" class="text-center py-4 text-muted">No branches found.</td>
                             </tr>
                         @endforelse
                     </tbody>

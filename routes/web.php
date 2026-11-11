@@ -9,10 +9,15 @@ use App\Http\Controllers\Core\DashboardController;
 use App\Http\Controllers\Core\RoleController;
 use App\Http\Controllers\Core\SystemSettingController;
 use App\Http\Controllers\Core\UserController;
+use App\Http\Controllers\Fb\RecipeController;
+use App\Http\Controllers\Finance\FinanceController;
+use App\Http\Controllers\Hr\HrController;
+use App\Http\Controllers\Inventory\InventoryController;
 use App\Http\Controllers\Pos\MenuController;
 use App\Http\Controllers\Pos\OrderController;
 use App\Http\Controllers\Pos\PosController;
 use App\Http\Controllers\Pos\TableController;
+use App\Http\Controllers\Procurement\ProcurementController;
 use Illuminate\Support\Facades\Route;
 
 // Guest Authentication Routes
@@ -37,6 +42,8 @@ Route::middleware('auth')->group(function () {
     // Phase 3: RMS / POS Module
     Route::get('/pos', [PosController::class, 'terminal'])->name('pos.terminal');
     Route::post('/pos/orders', [PosController::class, 'storeOrder'])->name('pos.orders.store');
+    Route::post('/pos/orders/{order}/add-items', [PosController::class, 'addItemsToOrder'])->name('pos.orders.add-items');
+    Route::post('/pos/orders/{order}/settle', [PosController::class, 'settleOrder'])->name('pos.orders.settle');
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
@@ -72,4 +79,23 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/settings', [SystemSettingController::class, 'index'])->name('settings.index');
     Route::put('/settings', [SystemSettingController::class, 'update'])->name('settings.update');
+
+    // Phase 4: Stock & Inventory
+    Route::get('/inventory', [InventoryController::class, 'index'])->name('inventory.index');
+    Route::post('/inventory/{item}/adjust', [InventoryController::class, 'adjust'])->name('inventory.adjust');
+
+    // Phase 4: Procurement
+    Route::get('/procurement', [ProcurementController::class, 'index'])->name('procurement.index');
+    Route::post('/procurement/orders', [ProcurementController::class, 'storeOrder'])->name('procurement.orders.store');
+
+    // Phase 5: F&B Recipes & Costing
+    Route::get('/fb/recipes', [RecipeController::class, 'index'])->name('fb.recipes.index');
+
+    // Phase 6: Finance & Accounting
+    Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
+    Route::post('/finance/expenses', [FinanceController::class, 'storeExpense'])->name('finance.expenses.store');
+
+    // Phase 7: Human Resources (HR)
+    Route::get('/hr', [HrController::class, 'index'])->name('hr.index');
+    Route::post('/hr/attendance', [HrController::class, 'recordAttendance'])->name('hr.attendance.record');
 });

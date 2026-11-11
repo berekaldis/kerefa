@@ -19,6 +19,7 @@ class CreateOrderRequest extends FormRequest
         return [
             'order_type' => ['required', 'in:dine_in,takeaway,delivery'],
             'restaurant_table_id' => ['nullable', 'required_if:order_type,dine_in', 'exists:restaurant_tables,id'],
+            'waiter_id' => ['nullable', 'exists:users,id'],
             'customer_name' => ['nullable', 'string', 'max:100'],
             'customer_phone' => ['nullable', 'string', 'max:50'],
             'delivery_address' => ['nullable', 'required_if:order_type,delivery', 'string', 'max:255'],

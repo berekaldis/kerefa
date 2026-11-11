@@ -1,15 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') - {{ config('app.name', 'Kerefa ERP') }}</title>
 
-    <!-- Google Fonts: Plus Jakarta Sans (Primary UI) & JetBrains Mono (Thermal & Numbers) -->
+    <!-- Theme Initialization Script (Prevents flash of wrong theme) -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('kerefa_erp_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        })();
+    </script>
+
+    <!-- Google Fonts: Inter (Crisp Modern UI) & JetBrains Mono (Thermal & Numbers) with display=swap for instantaneous loading -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -30,8 +38,144 @@
             --kerefa-card-border: #e2e8f0;
             --kerefa-card-hover-border: #cbd5e1;
             --sidebar-width: 270px;
-            --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        [data-bs-theme="dark"] {
+            --kerefa-body-bg: #0b1120;
+            --kerefa-header-bg: rgba(15, 23, 42, 0.90);
+            --kerefa-card-border: rgba(255, 255, 255, 0.08);
+            --kerefa-card-hover-border: rgba(255, 255, 255, 0.16);
+            --bs-body-bg: #0b1120;
+            --bs-body-color: #f1f5f9;
+        }
+
+        [data-bs-theme="dark"] .bg-white {
+            background-color: #111c30 !important;
+            color: #f1f5f9 !important;
+        }
+        [data-bs-theme="dark"] .card {
+            background-color: #111c30;
+            border-color: rgba(255, 255, 255, 0.08);
+            color: #f1f5f9;
+        }
+        [data-bs-theme="dark"] .card-header {
+            background-color: #16243d !important;
+            border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+            color: #f1f5f9 !important;
+        }
+        [data-bs-theme="dark"] .table-light {
+            --bs-table-bg: #16243d;
+            --bs-table-color: #cbd5e1;
+            --bs-table-border-color: rgba(255, 255, 255, 0.08);
+        }
+        [data-bs-theme="dark"] .table {
+            --bs-table-color: #f1f5f9;
+            --bs-table-hover-bg: #1a2a46;
+            --bs-table-border-color: rgba(255, 255, 255, 0.08);
+        }
+        [data-bs-theme="dark"] .text-dark {
+            color: #f8fafc !important;
+        }
+        [data-bs-theme="dark"] .bg-light {
+            background-color: #16243d !important;
+            color: #e2e8f0 !important;
+        }
+        [data-bs-theme="dark"] .border {
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+
+        /* Smart Animated Ambient Background Effect */
+        .smart-animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+            opacity: 0.65;
+        }
+        [data-bs-theme="dark"] .smart-animated-bg {
+            opacity: 0.45;
+        }
+
+        .smart-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(70px);
+            will-change: transform;
+        }
+        .smart-blob-1 {
+            top: -10%;
+            right: 5%;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(217, 119, 6, 0.18) 0%, rgba(217, 119, 6, 0) 70%);
+            animation: smartFloat1 18s ease-in-out infinite alternate;
+        }
+        .smart-blob-2 {
+            bottom: -15%;
+            left: 15%;
+            width: 550px;
+            height: 550px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.16) 0%, rgba(37, 99, 235, 0) 70%);
+            animation: smartFloat2 22s ease-in-out infinite alternate;
+        }
+        .smart-blob-3 {
+            top: 40%;
+            right: 35%;
+            width: 380px;
+            height: 380px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.14) 0%, rgba(16, 185, 129, 0) 70%);
+            animation: smartFloat3 26s ease-in-out infinite alternate;
+        }
+
+        @keyframes smartFloat1 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-40px, 60px) scale(1.08); }
+            100% { transform: translate(30px, -30px) scale(0.95); }
+        }
+        @keyframes smartFloat2 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(60px, -50px) scale(1.05); }
+            100% { transform: translate(-30px, 40px) scale(0.92); }
+        }
+        @keyframes smartFloat3 {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-50px, -40px) scale(1.12); }
+            100% { transform: translate(40px, 30px) scale(0.96); }
+        }
+
+        /* Desktop Collapsed Sidebar Rail */
+        @media (min-width: 992px) {
+            #sidebar.collapsed {
+                width: 76px !important;
+            }
+            #sidebar.collapsed .brand-text,
+            #sidebar.collapsed .sidebar-heading,
+            #sidebar.collapsed .nav-link span,
+            #sidebar.collapsed .footer-text {
+                display: none !important;
+            }
+            #sidebar.collapsed .brand {
+                justify-content: center !important;
+                padding: 1rem 0 !important;
+            }
+            #sidebar.collapsed .nav-link {
+                justify-content: center !important;
+                padding: 0.75rem 0 !important;
+            }
+            #sidebar.collapsed .nav-link i {
+                margin: 0 !important;
+                font-size: 1.3rem !important;
+            }
+            #content-wrapper.expanded {
+                margin-left: 76px !important;
+                width: calc(100% - 76px) !important;
+            }
         }
 
         * {
@@ -45,6 +189,9 @@
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+            text-rendering: optimizeLegibility;
+            letter-spacing: -0.011em;
         }
 
         /* Modern subtle custom scrollbars */
@@ -422,6 +569,13 @@
     @stack('styles')
 </head>
 <body>
+    <!-- Smart Animated Ambient Background -->
+    <div class="smart-animated-bg" aria-hidden="true">
+        <div class="smart-blob smart-blob-1"></div>
+        <div class="smart-blob smart-blob-2"></div>
+        <div class="smart-blob smart-blob-3"></div>
+    </div>
+
     <!-- Mobile Sidebar Backdrop Overlay -->
     <div id="sidebarBackdrop"></div>
 
@@ -470,32 +624,32 @@
 
                 @if(auth()->user()->hasPermission('inventory.view'))
                 <div class="sidebar-heading">Supply Chain</div>
-                <a href="#" class="nav-link text-muted" title="Phase 4 (In Development)">
-                    <i class="bi bi-box-seam"></i> <span>Stock & Inventory <span class="badge bg-secondary ms-1" style="font-size: 0.65rem;">Phase 4</span></span>
+                <a href="{{ route('inventory.index') }}" class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
+                    <i class="bi bi-box-seam"></i> <span>Stock & Inventory</span>
                 </a>
-                <a href="#" class="nav-link text-muted" title="Phase 4 (In Development)">
+                <a href="{{ route('procurement.index') }}" class="nav-link {{ request()->routeIs('procurement.*') ? 'active' : '' }}">
                     <i class="bi bi-truck"></i> <span>Procurement</span>
                 </a>
                 @endif
 
                 @if(auth()->user()->hasPermission('fb.recipes.view'))
                 <div class="sidebar-heading">Food & Beverage</div>
-                <a href="#" class="nav-link text-muted" title="Phase 5 (In Development)">
-                    <i class="bi bi-book"></i> <span>Recipes & Costing <span class="badge bg-secondary ms-1" style="font-size: 0.65rem;">Phase 5</span></span>
+                <a href="{{ route('fb.recipes.index') }}" class="nav-link {{ request()->routeIs('fb.recipes.*') ? 'active' : '' }}">
+                    <i class="bi bi-book"></i> <span>Recipes & Costing</span>
                 </a>
                 @endif
 
                 @if(auth()->user()->hasPermission('finance.view'))
                 <div class="sidebar-heading">Finance & Accounts</div>
-                <a href="#" class="nav-link text-muted" title="Phase 6 (In Development)">
-                    <i class="bi bi-journal-text"></i> <span>General Ledger <span class="badge bg-secondary ms-1" style="font-size: 0.65rem;">Phase 6</span></span>
+                <a href="{{ route('finance.index') }}" class="nav-link {{ request()->routeIs('finance.*') ? 'active' : '' }}">
+                    <i class="bi bi-journal-text"></i> <span>Operating Accounts</span>
                 </a>
                 @endif
 
                 @if(auth()->user()->hasPermission('hr.employees.view'))
                 <div class="sidebar-heading">Human Resources</div>
-                <a href="#" class="nav-link text-muted" title="Phase 7 (In Development)">
-                    <i class="bi bi-people"></i> <span>Staff Directory <span class="badge bg-secondary ms-1" style="font-size: 0.65rem;">Phase 7</span></span>
+                <a href="{{ route('hr.index') }}" class="nav-link {{ request()->routeIs('hr.*') ? 'active' : '' }}">
+                    <i class="bi bi-people"></i> <span>Staff Management</span>
                 </a>
                 @endif
 
@@ -555,36 +709,42 @@
             <!-- Top Header Navbar -->
             <nav class="top-navbar d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center gap-2 gap-md-3">
-                    <button class="btn btn-sm btn-light border d-lg-none px-2 py-1" id="sidebarToggle" aria-label="Toggle Sidebar">
+                    <button class="btn btn-sm btn-light border d-inline-flex align-items-center justify-content-center px-2.5 py-1.5 shadow-2xs" id="sidebarToggle" aria-label="Toggle Sidebar" title="Collapse / Expand Sidebar">
                         <i class="bi bi-list fs-5"></i>
                     </button>
 
                     <!-- Active Branch Indicator / Switcher -->
                     @if(isset($currentBranch))
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-light border dropdown-toggle d-flex align-items-center gap-2 shadow-sm rounded-pill px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        @if(auth()->user()->hasPermission('branches.switch') && isset($accessibleBranches) && $accessibleBranches->count() > 1)
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light border dropdown-toggle d-flex align-items-center gap-2 shadow-sm rounded-pill px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Switch Operational Branch">
+                                <span class="pulse-dot"></span>
+                                <span class="fw-semibold text-truncate" style="max-width: 140px;">{{ $currentBranch->name }}</span>
+                                <span class="badge bg-secondary font-mono d-none d-sm-inline" style="font-size: 0.65rem;">{{ $currentBranch->code }}</span>
+                            </button>
+                            <ul class="dropdown-menu shadow-lg border-0 rounded-3 mt-1">
+                                <li class="dropdown-header small text-uppercase fw-bold text-muted">Switch Active Branch</li>
+                                @foreach($accessibleBranches as $branch)
+                                <li>
+                                    <form method="POST" action="{{ route('branches.switch') }}">
+                                        @csrf
+                                        <input type="hidden" name="branch_id" value="{{ $branch->id }}">
+                                        <button type="submit" class="dropdown-item d-flex align-items-center justify-content-between py-2 {{ $currentBranch->id === $branch->id ? 'active' : '' }}">
+                                            <span>{{ $branch->name }}</span>
+                                            <span class="badge {{ $currentBranch->id === $branch->id ? 'bg-light text-dark' : 'bg-secondary' }} ms-2 font-mono">{{ $branch->code }}</span>
+                                        </button>
+                                    </form>
+                                </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        @else
+                        <div class="d-flex align-items-center gap-2 px-3 py-1 bg-light border rounded-pill shadow-2xs">
                             <span class="pulse-dot"></span>
-                            <span class="fw-semibold text-truncate" style="max-width: 140px;">{{ $currentBranch->name }}</span>
+                            <span class="fw-semibold text-truncate small" style="max-width: 140px;">{{ $currentBranch->name }}</span>
                             <span class="badge bg-secondary font-mono d-none d-sm-inline" style="font-size: 0.65rem;">{{ $currentBranch->code }}</span>
-                        </button>
-                        @if(isset($accessibleBranches) && $accessibleBranches->count() > 1)
-                        <ul class="dropdown-menu shadow-lg border-0 rounded-3 mt-1">
-                            <li class="dropdown-header small text-uppercase fw-bold text-muted">Switch Active Branch</li>
-                            @foreach($accessibleBranches as $branch)
-                            <li>
-                                <form method="POST" action="{{ route('branches.switch') }}">
-                                    @csrf
-                                    <input type="hidden" name="branch_id" value="{{ $branch->id }}">
-                                    <button type="submit" class="dropdown-item d-flex align-items-center justify-content-between py-2 {{ $currentBranch->id === $branch->id ? 'active' : '' }}">
-                                        <span>{{ $branch->name }}</span>
-                                        <span class="badge {{ $currentBranch->id === $branch->id ? 'bg-light text-dark' : 'bg-secondary' }} ms-2 font-mono">{{ $branch->code }}</span>
-                                    </button>
-                                </form>
-                            </li>
-                            @endforeach
-                        </ul>
+                        </div>
                         @endif
-                    </div>
                     @endif
                 </div>
 
@@ -601,6 +761,11 @@
                         <i class="bi bi-printer-fill text-warning"></i> <span>Station Mapping</span>
                     </a>
                     @endif
+
+                    <!-- Dark / Light Theme Toggle -->
+                    <button type="button" id="themeToggleBtn" class="btn btn-sm btn-light border rounded-circle shadow-2xs d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" title="Toggle Light/Dark Theme">
+                        <i id="themeToggleIcon" class="bi bi-moon-stars-fill text-warning fs-6"></i>
+                    </button>
 
                     <!-- Current User Menu -->
                     <div class="dropdown">
@@ -682,35 +847,78 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Responsive Mobile Sidebar Drawer Toggle & Overlay
+        // =========================================================================
+        // SIDEBAR TOGGLE (DESKTOP COLLAPSE & MOBILE OFFCANVAS DRAWER)
+        // =========================================================================
         const sidebar = document.getElementById('sidebar');
+        const contentWrapper = document.getElementById('content-wrapper');
         const sidebarToggle = document.getElementById('sidebarToggle');
         const sidebarCloseBtn = document.getElementById('sidebarCloseBtn');
         const sidebarBackdrop = document.getElementById('sidebarBackdrop');
 
-        function openSidebar() {
-            sidebar.classList.add('show');
-            sidebarBackdrop.classList.add('show');
-            document.body.style.overflow = 'hidden';
+        // Restore saved desktop collapse state
+        if (window.innerWidth >= 992 && localStorage.getItem('kerefa_sidebar_collapsed') === 'true') {
+            sidebar?.classList.add('collapsed');
+            contentWrapper?.classList.add('expanded');
         }
 
-        function closeSidebar() {
+        function toggleSidebar() {
+            if (window.innerWidth >= 992) {
+                const isCollapsed = sidebar.classList.toggle('collapsed');
+                contentWrapper.classList.toggle('expanded');
+                localStorage.setItem('kerefa_sidebar_collapsed', isCollapsed ? 'true' : 'false');
+            } else {
+                sidebar.classList.add('show');
+                sidebarBackdrop.classList.add('show');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeMobileSidebar() {
             sidebar.classList.remove('show');
             sidebarBackdrop.classList.remove('show');
             document.body.style.overflow = '';
         }
 
-        sidebarToggle?.addEventListener('click', openSidebar);
-        sidebarCloseBtn?.addEventListener('click', closeSidebar);
-        sidebarBackdrop?.addEventListener('click', closeSidebar);
+        sidebarToggle?.addEventListener('click', toggleSidebar);
+        sidebarCloseBtn?.addEventListener('click', closeMobileSidebar);
+        sidebarBackdrop?.addEventListener('click', closeMobileSidebar);
 
-        // Close sidebar when clicking any navigation link on mobile
+        // Close sidebar when clicking navigation link on mobile
         document.querySelectorAll('#sidebar .nav-link').forEach(link => {
             link.addEventListener('click', () => {
                 if (window.innerWidth < 992) {
-                    closeSidebar();
+                    closeMobileSidebar();
                 }
             });
+        });
+
+        // =========================================================================
+        // DARK MODE / LIGHT MODE TOGGLE
+        // =========================================================================
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const themeToggleIcon = document.getElementById('themeToggleIcon');
+
+        function updateThemeIcon(theme) {
+            if (!themeToggleIcon) return;
+            if (theme === 'dark') {
+                themeToggleIcon.className = 'bi bi-sun-fill text-warning fs-6';
+                themeToggleBtn.title = 'Switch to Light Mode';
+            } else {
+                themeToggleIcon.className = 'bi bi-moon-stars-fill text-primary fs-6';
+                themeToggleBtn.title = 'Switch to Dark Mode';
+            }
+        }
+
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+        updateThemeIcon(currentTheme);
+
+        themeToggleBtn?.addEventListener('click', () => {
+            const activeTheme = document.documentElement.getAttribute('data-bs-theme');
+            const nextTheme = activeTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-bs-theme', nextTheme);
+            localStorage.setItem('kerefa_erp_theme', nextTheme);
+            updateThemeIcon(nextTheme);
         });
 
         // =========================================================================

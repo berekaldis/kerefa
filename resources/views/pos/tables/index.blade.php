@@ -15,11 +15,13 @@
                 </div>
             </div>
         </div>
+        @if(auth()->user()->hasPermission('pos.tables.manage'))
         <div class="d-flex gap-2">
             <button type="button" class="btn btn-sm btn-kerefa rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#addTableModal">
                 <i class="bi bi-plus-lg me-1"></i> Add Table
             </button>
         </div>
+        @endif
     </div>
 
     <!-- Live Status KPI Summary Bar -->
@@ -136,6 +138,7 @@
                                     @endif
                                 </div>
 
+                                @if(auth()->user()->hasPermission('pos.tables.manage'))
                                 <div class="pt-2 border-top d-flex justify-content-between align-items-center mt-2">
                                     @if($table->status === 'occupied' && $table->activeOrder)
                                         <button type="button" class="btn btn-sm btn-light border rounded-circle p-1" style="width: 28px; height: 28px;" data-bs-toggle="modal" data-bs-target="#transferModal{{ $table->id }}" title="Transfer Table">
@@ -149,6 +152,7 @@
                                         <i class="bi bi-pencil text-muted"></i>
                                     </button>
                                 </div>
+                                @endif
                             </div>
                         </div>
 
